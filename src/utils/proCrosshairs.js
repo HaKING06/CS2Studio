@@ -1,101 +1,61 @@
-import { decodeAnyShareCode } from './shareCode.js';
+import proData from '../data/proCrosshairs.json' with { type: 'json' };
 
-export const PRO_CROSSHAIRS = [
-  {
-    id: 'donk',
-    player: 'donk',
-    team: 'Team Spirit',
-    role: 'Entry Rifler',
-    shareCode: 'CS263KXGKDQJUCHNLnQmFR5eLWGS4uBQs8VRdLh7ZGpaGn',
-    legacyCode: 'CSGO-kM6Tw-TY67b-6dF3W-Hutjm-Sr8rN',
-    resolution: '1280x960 (4:3)',
-    tag: '2024–2026 Major MVP',
-  },
-  {
-    id: 's1mple',
-    player: 's1mple',
-    team: 'Legend / Falcons',
-    role: 'AWP / Hybrid',
-    shareCode: 'CSb7uHXB989YebCcoiuafDiUKZntFPoXCVySN5sMcwOAYF',
-    legacyCode: 'CSGO-MQfzY-jnHyz-Whzv3-USwcf-2pFKO',
-    resolution: '1280x960 (4:3)',
-    tag: 'CS GOAT',
-  },
-  {
-    id: 'm0NESY',
-    player: 'm0NESY',
-    team: 'G2 / Falcons',
-    role: 'Primary AWPer',
-    shareCode: 'CSSTHp86Bio65tsi8mC5AEBRwoBRT8pAx9RzTW2NcwOAYF',
-    legacyCode: 'CSGO-fdBDn-SmBER-ZeejC-iw5tu-kHk9Q',
-    resolution: '1280x960 (4:3)',
-    tag: 'Flick Precision',
-  },
-  {
-    id: 'ZywOo',
-    player: 'ZywOo',
-    team: 'Team Vitality',
-    role: 'AWP / Star Rifler',
-    shareCode: 'CSGO-33tjH-QWX3U-KcSnD-wu3wu-i2pxA',
-    legacyCode: 'CSGO-33tjH-QWX3U-KcSnD-wu3wu-i2pxA',
-    resolution: '1280x960 (4:3)',
-    tag: 'HLTV #1',
-  },
-  {
-    id: 'NiKo',
-    player: 'NiKo',
-    team: 'Falcons',
-    role: 'Star Rifler',
-    shareCode: 'CSbWBdS8cG7fAf7fjkTfUdNGMAxtrwXURGZOBaFG4GCEZB',
-    legacyCode: 'CSGO-OFKZZ-mZp9n-KXx4x-2SmEp-jcYHK',
-    resolution: '1280x1024',
-    tag: 'Deagle Ace',
-  },
-  {
-    id: 'ropz',
-    player: 'ropz',
-    team: 'Team Vitality',
-    role: 'Lurker / Rifler',
-    shareCode: 'CSUxjvBKxbaTKG5sfdufqzDvzeAiaTuveQmT6XFOvWmvAc',
-    legacyCode: 'CSGO-HhqGJ-sDkmR-W9oNx-DvQOF-xpuCQ',
-    resolution: '1920x1080 (16:9)',
-    tag: 'Native 1080p',
-  },
-  {
-    id: 'b1t',
-    player: 'b1t',
-    team: 'NAVI',
-    role: 'Rifler',
-    shareCode: 'CSGO-9OysP-sFw9b-dHiXx-VXUA2-hif4D',
-    legacyCode: 'CSGO-9OysP-sFw9b-dHiXx-VXUA2-hif4D',
-    resolution: '1280x960 (4:3)',
-    tag: 'Headshot % King',
-  },
-  {
-    id: 'dev1ce',
-    player: 'dev1ce',
-    team: 'Astralis',
-    role: 'AWP / IGL',
-    shareCode: 'CSGO-yxFut-M6Vka-p4GAf-X5yZT-ey3JE',
-    legacyCode: 'CSGO-yxFut-M6Vka-p4GAf-X5yZT-ey3JE',
-    resolution: '1280x960 (4:3)',
-    tag: 'Center Dot Setup',
-  },
-  {
-    id: 'ScreaM',
-    player: 'ScreaM',
-    team: 'CS Legend',
-    role: 'One-Tapper',
-    shareCode: 'CSGO-oCRnG-iSPDN-vJrcP-mdnHU-85hWA',
-    legacyCode: 'CSGO-oCRnG-iSPDN-vJrcP-mdnHU-85hWA',
-    resolution: '1024x768 (4:3)',
-    tag: 'One-Tap Classic',
-  },
-].map((entry) => ({
-  ...entry,
-  settings: decodeAnyShareCode(entry.shareCode),
-}));
+/**
+ * Full verified esports pro crosshair database (674 entries categorized by Year / Major era).
+ */
+export const PRO_CROSSHAIRS = proData;
+
+export const PRO_YEAR_FILTERS = [
+  { id: 'all', labelKey: 'arena.filterAllYears', fallback: 'All Years' },
+  { id: '2026', label: '2026' },
+  { id: '2024 Major', label: '2024 Major' },
+  { id: '2023 Major', label: '2023 Major' },
+  { id: 'classic', label: '2012–2016 Legends' },
+];
+
+const teamSet = new Set();
+for (const entry of PRO_CROSSHAIRS) {
+  if (entry.team && entry.team !== 'Pro Circuit') {
+    teamSet.add(entry.team);
+  }
+}
+
+export const PRO_TEAMS = Array.from(teamSet).sort((a, b) => a.localeCompare(b));
 
 export function getProCrosshairById(id) {
-  return PRO_CROSSHAIRS.find((p) => p.id === id) || null;
+  if (!id) return null;
+  const lower = String(id).toLowerCase();
+  return (
+    PRO_CROSSHAIRS.find((p) => p.id === id) ||
+    PRO_CROSSHAIRS.find((p) => p.slug === lower || p.player.toLowerCase() === lower) ||
+    null
+  );
+}
+
+/**
+ * Filter the esports database by search query, year/era bucket, and team.
+ */
+export function filterProCrosshairs({ search = '', year = 'all', team = 'all' } = {}) {
+  const q = String(search || '').trim().toLowerCase();
+
+  return PRO_CROSSHAIRS.filter((entry) => {
+    if (year !== 'all') {
+      if (year === 'classic') {
+        if (!/^201\d$/.test(entry.year)) return false;
+      } else if (entry.year !== year) {
+        return false;
+      }
+    }
+
+    if (team !== 'all' && entry.team !== team) {
+      return false;
+    }
+
+    if (q) {
+      const hay = `${entry.player} ${entry.realName} ${entry.team} ${entry.year} ${entry.tag} ${entry.shareCode}`.toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+
+    return true;
+  });
 }

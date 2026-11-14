@@ -1,100 +1,41 @@
+import * as THREE from 'three';
 import {
   CROSSHAIR_COLOR_PRESETS,
   drawCrosshairOnCanvas,
-  buildCrosshairMiniSvg,
   rgbToHex,
   hexToRgb,
 } from '../utils/crosshairCanvas.js';
-import { PRO_CROSSHAIRS, getProCrosshairById } from '../utils/proCrosshairs.js';
 import {
-  decodeAnyShareCode,
-  encodeCrosshairCode,
-  generateCrosshairConVars,
-} from '../utils/shareCode.js';
+loadDust2Map,
+  setupDust2Lighting,
+  getDust2ViewPose,
+} from '../utils/dust2MapLoader.js';
+import { CS2_MAP_BACKDROPS, DEFAULT_FALLBACK_BACKDROP } from '../utils/mapBackdrops.js';
+import { FPS_POSES, loadNormalizedWeapon } from '../utils/weaponModelLoader.js';
+import { generateCrosshairConVars } from '../utils/shareCode.js';
 import { DEFAULT_CROSSHAIR, loadState, saveState } from '../utils/storage.js';
 import { notify, t } from './clientBridge.js';
-
-const BACKGROUNDS = {
-  dust2: {
-    label: 'Dust2 Sand',
-    render: (ctx, w, h) => {
-      const grad = ctx.createLinearGradient(0, 0, 0, h);
-      grad.addColorStop(0, '#a8c2dc');
-      grad.addColorStop(0.42, '#d5c7ab');
-      grad.addColorStop(0.75, '#bfa57c');
-      grad.addColorStop(1, '#8c724d');
-      ctx.fillStyle = grad;
-      ctx.fillRect(0, 0, w, h);
-
-      ctx.fillStyle = 'rgba(72, 54, 34, 0.16)';
-      ctx.fillRect(w * 0.08, h * 0.44, w * 0.3, h * 0.34);
-      ctx.fillRect(w * 0.65, h * 0.48, w * 0.24, h * 0.3);
-      ctx.fillStyle = 'rgba(139, 38, 29, 0.42)';
-      ctx.font = 'bold 48px sans-serif';
-      ctx.fillText('A', w * 0.12, h * 0.54);
-    },
-  },
-  mirage: {
-    label: 'Mirage Brick',
-    render: (ctx, w, h) => {
-      const grad = ctx.createLinearGradient(0, 0, w, h);
-      grad.addColorStop(0, '#9e7d58');
-      grad.addColorStop(0.6, '#b8946b');
-      grad.addColorStop(1, '#6f5538');
-      ctx.fillStyle = grad;
-      ctx.fillRect(0, 0, w, h);
-      ctx.strokeStyle = 'rgba(40, 28, 18, 0.25)';
-      ctx.lineWidth = 2;
-      for (let y = 0; y < h; y += 44) {
-        ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.lineTo(w, y);
-        ctx.stroke();
-      }
-    },
-  },
-  dark: {
-    label: 'Dark Smoke',
-    render: (ctx, w, h) => {
-      const grad = ctx.createRadialGradient(w / 2, h / 2, 20, w / 2, h / 2, w * 0.7);
-      grad.addColorStop(0, '#1e293b');
-      grad.addColorStop(1, '#080b11');
-      ctx.fillStyle = grad;
-      ctx.fillRect(0, 0, w, h);
-    },
-  },
-  sky: {
-    label: 'Bright Sky',
-    render: (ctx, w, h) => {
-      const grad = ctx.createLinearGradient(0, 0, 0, h);
-      grad.addColorStop(0, '#60a5fa');
-      grad.addColorStop(0.55, '#bae6fd');
-      grad.addColorStop(1, '#e2e8f0');
-      ctx.fillStyle = grad;
-      ctx.fillRect(0, 0, w, h);
-    },
-  },
-};
+import { mountProDatabase } from './proDatabaseWidget.js';
 
 export function mountCrosshairPage() {
   const stageEl = document.getElementById('ch-preview-stage');
-  const bgCanvas = document.getElementById('ch-preview-bg');
+  const glCanvas = document.getElementById('ch-preview-webgl');
+  const backdropImg = document.getElementById('ch-preview-backdrop');
   const hudCanvas = document.getElementById('ch-preview-hud');
-  if (!stageEl || !bgCanvas || !hudCanvas) return;
+  if (!stageEl || !hudCanvas) return;
 
   const state = loadState();
   const persist = () => saveState(state);
 
-  const proGridEl = document.getElementById('pro-crosshair-grid');
-  const shareInputEl = document.getElementById('crosshair-share-code');
-  const importBtnEl = document.getElementById('btn-import-crosshair');
-  const copyCodeBtnEl = document.getElementById('btn-copy-crosshair');
   const copyConVarsBtnEl = document.getElementById('btn-copy-convars');
   const resetBtnEl = document.getElementById('btn-ch-reset');
   const testSpreadEl = document.getElementById('ch-test-spread');
   const scopePreviewEl = document.getElementById('ch-scope-preview');
+  const weaponToggleEl = document.getElementById('ch-show-weapon');
   const conVarsOutEl = document.getElementById('ch-convars-output');
-  const bgBtns = document.querySelectorAll('[data-ch-bg]');
+  const viewBadgeEl = document.getElementById('ch-viewport-badge');
+  const viewBtns = document.querySelectorAll('[data-ch-view]');
+  const mapSelectEl = document.getElementById('ch-map-select');
 
   const styleEl = document.getElementById('ch-style');
   const lengthEl = document.getElementById('ch-length');
@@ -129,264 +70,363 @@ export function mountCrosshairPage() {
     dynamicSpreadLimit: document.getElementById('val-ch-spread-limit'),
   };
 
-  let activeBg = 'dust2';
   let simulateBurst = false;
   let previewScope = false;
+  let showWeapon = Boolean(weaponToggleEl?.checked ?? true);
+  let activeMode = '3d-long-wall'; // '3d-*' = Option A (.GLB 3D), 'img-*' = Option B (1080p CS2 WebP)
+  let webglAvailable = false;
 
-  const bgCtx = bgCanvas.getContext('2d');
   const hudCtx = hudCanvas.getContext('2d');
   let stageWidth = 720;
   let stageHeight = 405;
 
-  function renderBackground() {
-    const renderer = BACKGROUNDS[activeBg]?.render || BACKGROUNDS.dust2.render;
-    renderer(bgCtx, stageWidth, stageHeight);
+    // Option A: Real Three.js 3D Dust2 (.GLB) Viewport + Fallback to Option B Real 1080p CS2 Screenshot
+    let renderer = null;
+    let scene = null;
+    let camera = null;
+    let mapMeshes = [];
+    let baseYaw = -Math.PI / 2;
+    let basePitch = 0;
+    let lookYawOffset = 0;
+    let lookPitchOffset = 0;
+    let weaponRig = null;
 
-    bgBtns.forEach((btn) => {
-      const isAct = btn.dataset.chBg === activeBg;
-      btn.classList.toggle('bg-[#ff9d00]/20', isAct);
-      btn.classList.toggle('border-[#ff9d00]', isAct);
-      btn.classList.toggle('text-[#ff9d00]', isAct);
-      btn.classList.toggle('border-slate-700', !isAct);
-      btn.classList.toggle('text-slate-400', !isAct);
-    });
-  }
+      function applyViewportMode() {
+        const isScreenshot = activeMode.startsWith('img-') || !webglAvailable;
+        if (isScreenshot) {
+          const entry =
+            CS2_MAP_BACKDROPS.find((m) => m.id === activeMode) || CS2_MAP_BACKDROPS[0];
+          if (backdropImg) {
+            backdropImg.src = entry.src || DEFAULT_FALLBACK_BACKDROP;
+            backdropImg.classList.remove('hidden');
+          }
+          glCanvas?.classList.add('hidden');
+          if (mapSelectEl && activeMode.startsWith('img-')) {
+            mapSelectEl.value = entry.id;
+          }
+          if (viewBadgeEl) {
+            viewBadgeEl.textContent = `CS2 1080p · ${entry.label}`;
+          }
+        } else {
+          backdropImg?.classList.add('hidden');
+          glCanvas?.classList.remove('hidden');
+          if (mapSelectEl) mapSelectEl.value = '';
+          if (camera) {
+            const pose = getDust2ViewPose(mapMeshes, activeMode);
+            camera.position.copy(pose.pos);
+            baseYaw = pose.yaw;
+            basePitch = pose.pitch;
+            lookYawOffset = 0;
+            lookPitchOffset = 0;
+          }
+          if (viewBadgeEl) {
+            const btn = Array.from(viewBtns).find((b) => b.dataset.chView === activeMode);
+            viewBadgeEl.textContent = btn?.textContent?.trim() || '3D Dust2 (.GLB)';
+          }
+        }
 
-  function handleResize() {
-    const rect = stageEl.getBoundingClientRect();
-    if (!rect.width || !rect.height) return;
-    stageWidth = rect.width;
-    stageHeight = rect.height;
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    bgCanvas.width = Math.round(stageWidth * dpr);
-    bgCanvas.height = Math.round(stageHeight * dpr);
-    bgCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    hudCanvas.width = Math.round(stageWidth * dpr);
-    hudCanvas.height = Math.round(stageHeight * dpr);
-    hudCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    renderBackground();
-  }
+        viewBtns.forEach((btn) => {
+          const isAct = !isScreenshot && btn.dataset.chView === activeMode;
+          btn.classList.toggle('bg-[#ff9d00]/20', isAct);
+          btn.classList.toggle('border-[#ff9d00]', isAct);
+          btn.classList.toggle('text-[#ff9d00]', isAct);
+          btn.classList.toggle('bg-[#0b0f17]', !isAct);
+          btn.classList.toggle('border-slate-700', !isAct);
+          btn.classList.toggle('text-slate-400', !isAct);
+        });
+      }
 
-  new ResizeObserver(handleResize).observe(stageEl);
-  handleResize();
+      function initWebGL3D() {
+        if (!glCanvas) return;
+        try {
+          renderer = new THREE.WebGLRenderer({
+            canvas: glCanvas,
+            antialias: true,
+            powerPreference: 'high-performance',
+          });
+          renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+          renderer.shadowMap.enabled = true;
+          renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+          renderer.toneMapping = THREE.ACESFilmicToneMapping;
+          renderer.toneMappingExposure = 1.05;
 
-  function renderSwatches() {
-    if (!colorSwatchesEl) return;
-    colorSwatchesEl.innerHTML = CROSSHAIR_COLOR_PRESETS.map((preset) => {
-      const active =
-        Math.abs(state.crosshair.red - preset.r) < 8 &&
-        Math.abs(state.crosshair.green - preset.g) < 8 &&
-        Math.abs(state.crosshair.blue - preset.b) < 8;
-      return `<button type="button" data-color-preset="${preset.id}" title="${preset.label}"
+          scene = new THREE.Scene();
+          const { maxAniso } = setupDust2Lighting(scene, renderer);
+
+          camera = new THREE.PerspectiveCamera(Number(state.viewmodel?.fov || 68), 16 / 9, 0.04, 180);
+          camera.rotation.order = 'YXZ';
+          scene.add(camera);
+
+          weaponRig = new THREE.Group();
+          scene.add(weaponRig);
+          camera.add(weaponRig);
+          const vm = state.viewmodel || { offsetX: 2.5, offsetY: 0, offsetZ: -1.5 };
+          const pose = FPS_POSES.ak47;
+          weaponRig.position.set(
+            pose.pos[0] + (vm.offsetX - 2.5) * 0.025,
+            pose.pos[1] + vm.offsetZ * 0.02,
+            pose.pos[2] - vm.offsetY * 0.03,
+          );
+          weaponRig.rotation.set(...pose.rot);
+          weaponRig.visible = showWeapon;
+
+          loadNormalizedWeapon('ak47').then(({ root }) => {
+            if (weaponRig && root) weaponRig.add(root);
+          });
+
+          webglAvailable = true;
+          applyViewportMode();
+
+          loadDust2Map(scene, maxAniso).then((res) => {
+            if (res.isFallback) {
+              // Real HD 1080p CS2 screenshot fallback when GLB cannot load
+              webglAvailable = false;
+              activeMode = CS2_MAP_BACKDROPS[0].id;
+              applyViewportMode();
+              return;
+            }
+            mapMeshes = res.mapMeshes;
+            applyViewportMode();
+          });
+
+          // Subtle mouse-drag orbit look inside the 3D Dust2 scene
+          let dragging = false;
+          let lastX = 0;
+          let lastY = 0;
+          glCanvas.addEventListener('pointerdown', (e) => {
+            dragging = true;
+            lastX = e.clientX;
+            lastY = e.clientY;
+            glCanvas.setPointerCapture?.(e.pointerId);
+          });
+          glCanvas.addEventListener('pointermove', (e) => {
+            if (!dragging) return;
+            const dx = e.clientX - lastX;
+            const dy = e.clientY - lastY;
+            lastX = e.clientX;
+            lastY = e.clientY;
+            lookYawOffset -= dx * 0.0035;
+            lookPitchOffset = Math.max(-0.55, Math.min(0.55, lookPitchOffset - dy * 0.003));
+          });
+          const stopDrag = () => { dragging = false; };
+          glCanvas.addEventListener('pointerup', stopDrag);
+          glCanvas.addEventListener('pointercancel', stopDrag);
+        } catch {
+          webglAvailable = false;
+          activeMode = CS2_MAP_BACKDROPS[0].id;
+          applyViewportMode();
+        }
+      }
+
+      function handleResize() {
+        const rect = stageEl.getBoundingClientRect();
+        if (!rect.width || !rect.height) return;
+        stageWidth = rect.width;
+        stageHeight = rect.height;
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        if (renderer && camera) {
+          renderer.setSize(stageWidth, stageHeight, false);
+          camera.aspect = stageWidth / stageHeight;
+          camera.updateProjectionMatrix();
+        }
+        hudCanvas.width = Math.round(stageWidth * dpr);
+        hudCanvas.height = Math.round(stageHeight * dpr);
+        hudCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      }
+
+      new ResizeObserver(handleResize).observe(stageEl);
+      initWebGL3D();
+      handleResize();
+
+      function renderSwatches() {
+        if (!colorSwatchesEl) return;
+        colorSwatchesEl.innerHTML = CROSSHAIR_COLOR_PRESETS.map((preset) => {
+          const active =
+            Math.abs(state.crosshair.red - preset.r) < 8 &&
+            Math.abs(state.crosshair.green - preset.g) < 8 &&
+            Math.abs(state.crosshair.blue - preset.b) < 8;
+          return `<button type="button" data-color-preset="${preset.id}" title="${preset.label}"
         class="w-7 h-7 rounded-sm border transition-transform hover:scale-110 cursor-pointer ${active ? 'border-white ring-2 ring-[#ff9d00] scale-105' : 'border-slate-700'}"
         style="background-color: rgb(${preset.r}, ${preset.g}, ${preset.b})"></button>`;
-    }).join('');
-  }
+        }).join('');
+      }
 
-  function renderProGrid() {
-    if (!proGridEl) return;
-    proGridEl.innerHTML = PRO_CROSSHAIRS.map((pro) => {
-      const isSelected = state.crosshair.activeProId === pro.id;
-      return `<button type="button" data-pro-id="${pro.id}"
-        class="pro-card group flex items-center gap-3 p-2.5 rounded-sm border text-left transition-all cursor-pointer ${
-          isSelected
-            ? 'bg-[#ff9d00]/12 border-[#ff9d00] shadow-[0_0_18px_rgba(255,157,0,0.16)]'
-            : 'bg-[#0b0f17] border-slate-800 hover:border-[#ff9d00]/60 hover:bg-slate-900'
-        }">
-        ${buildCrosshairMiniSvg(pro.settings)}
-        <div class="min-w-0 flex-1">
-          <div class="flex items-center justify-between gap-1">
-            <span class="font-bold text-sm text-white truncate">${pro.player}</span>
-            <span class="text-[10px] px-1.5 py-0.5 rounded-sm bg-slate-800 text-[#ff9d00] border border-slate-700 shrink-0">${pro.tag}</span>
-          </div>
-          <div class="text-xs text-slate-400 truncate">${pro.team} • ${pro.role}</div>
-          <div class="text-[10px] text-slate-500 font-mono truncate mt-0.5">${pro.resolution}</div>
-        </div>
-      </button>`;
-    }).join('');
-  }
+      let proDbCtrl = null;
 
-  function syncUi() {
-    const ch = state.crosshair;
-    if (styleEl) styleEl.value = String(ch.style);
-    if (lengthEl) lengthEl.value = String(ch.length);
-    if (thicknessEl) thicknessEl.value = String(ch.thickness);
-    if (gapEl) gapEl.value = String(ch.gap);
-    if (alphaEl) alphaEl.value = String(ch.alpha);
-    if (outlineEl) outlineEl.value = String(ch.outlineMode);
-    if (outlineThickEl) outlineThickEl.value = String(ch.outlineThickness ?? 1);
-    if (dotEl) dotEl.checked = Boolean(ch.centerDotEnabled);
-    if (tStyleEl) tStyleEl.checked = Boolean(ch.tStyleEnabled);
-    if (followRecoilEl) followRecoilEl.checked = Boolean(ch.followRecoil);
-    if (sniperEl) sniperEl.value = String(ch.sniperWidth ?? 1);
-    if (splitDistEl) splitDistEl.value = String(ch.splitDistance ?? 6);
-    if (innerAlphaEl) innerAlphaEl.value = String(ch.innerSplitAlpha ?? 1);
-    if (outerAlphaEl) outerAlphaEl.value = String(ch.outerSplitAlpha ?? 0.5);
-    if (splitRatioEl) splitRatioEl.value = String(ch.splitSizeRatio ?? 0.3);
-    if (spreadLimitEl) spreadLimitEl.value = String(ch.dynamicSpreadLimit ?? 227);
-    if (colorPickerEl) colorPickerEl.value = rgbToHex(ch.red, ch.green, ch.blue);
+      function syncUi() {
+        const ch = state.crosshair;
+        if (styleEl) styleEl.value = String(ch.style);
+        if (lengthEl) lengthEl.value = String(ch.length);
+        if (thicknessEl) thicknessEl.value = String(ch.thickness);
+        if (gapEl) gapEl.value = String(ch.gap);
+        if (alphaEl) alphaEl.value = String(ch.alpha);
+        if (outlineEl) outlineEl.value = String(ch.outlineMode);
+        if (outlineThickEl) outlineThickEl.value = String(ch.outlineThickness ?? 1);
+        if (dotEl) dotEl.checked = Boolean(ch.centerDotEnabled);
+        if (tStyleEl) tStyleEl.checked = Boolean(ch.tStyleEnabled);
+        if (followRecoilEl) followRecoilEl.checked = Boolean(ch.followRecoil);
+        if (sniperEl) sniperEl.value = String(ch.sniperWidth ?? 1);
+        if (splitDistEl) splitDistEl.value = String(ch.splitDistance ?? 6);
+        if (innerAlphaEl) innerAlphaEl.value = String(ch.innerSplitAlpha ?? 1);
+        if (outerAlphaEl) outerAlphaEl.value = String(ch.outerSplitAlpha ?? 0.5);
+        if (splitRatioEl) splitRatioEl.value = String(ch.splitSizeRatio ?? 0.3);
+        if (spreadLimitEl) spreadLimitEl.value = String(ch.dynamicSpreadLimit ?? 227);
+        if (colorPickerEl) colorPickerEl.value = rgbToHex(ch.red, ch.green, ch.blue);
 
-    if (valEls.length) valEls.length.textContent = String(ch.length);
-    if (valEls.thickness) valEls.thickness.textContent = String(ch.thickness);
-    if (valEls.gap) valEls.gap.textContent = String(ch.gap);
-    if (valEls.alpha) valEls.alpha.textContent = String(ch.alpha);
-    if (valEls.outlineThickness) valEls.outlineThickness.textContent = Number(ch.outlineThickness ?? 1).toFixed(1);
-    if (valEls.sniperWidth) valEls.sniperWidth.textContent = String(ch.sniperWidth ?? 1);
-    if (valEls.splitDistance) valEls.splitDistance.textContent = String(ch.splitDistance ?? 6);
-    if (valEls.innerSplitAlpha) valEls.innerSplitAlpha.textContent = Number(ch.innerSplitAlpha ?? 1).toFixed(2);
-    if (valEls.outerSplitAlpha) valEls.outerSplitAlpha.textContent = Number(ch.outerSplitAlpha ?? 0.5).toFixed(2);
-    if (valEls.splitSizeRatio) valEls.splitSizeRatio.textContent = Number(ch.splitSizeRatio ?? 0.3).toFixed(2);
-    if (valEls.dynamicSpreadLimit) valEls.dynamicSpreadLimit.textContent = String(ch.dynamicSpreadLimit ?? 227);
+        if (valEls.length) valEls.length.textContent = String(ch.length);
+        if (valEls.thickness) valEls.thickness.textContent = String(ch.thickness);
+        if (valEls.gap) valEls.gap.textContent = String(ch.gap);
+        if (valEls.alpha) valEls.alpha.textContent = String(ch.alpha);
+        if (valEls.outlineThickness) valEls.outlineThickness.textContent = Number(ch.outlineThickness ?? 1).toFixed(1);
+        if (valEls.sniperWidth) valEls.sniperWidth.textContent = String(ch.sniperWidth ?? 1);
+        if (valEls.splitDistance) valEls.splitDistance.textContent = String(ch.splitDistance ?? 6);
+        if (valEls.innerSplitAlpha) valEls.innerSplitAlpha.textContent = Number(ch.innerSplitAlpha ?? 1).toFixed(2);
+        if (valEls.outerSplitAlpha) valEls.outerSplitAlpha.textContent = Number(ch.outerSplitAlpha ?? 0.5).toFixed(2);
+        if (valEls.splitSizeRatio) valEls.splitSizeRatio.textContent = Number(ch.splitSizeRatio ?? 0.3).toFixed(2);
+        if (valEls.dynamicSpreadLimit) valEls.dynamicSpreadLimit.textContent = String(ch.dynamicSpreadLimit ?? 227);
 
-    if (shareInputEl) shareInputEl.value = encodeCrosshairCode(ch);
-    if (conVarsOutEl) conVarsOutEl.textContent = generateCrosshairConVars(ch);
-    renderSwatches();
-    renderProGrid();
-  }
+        if (conVarsOutEl) conVarsOutEl.textContent = generateCrosshairConVars(ch);
+        renderSwatches();
+        proDbCtrl?.sync();
+      }
 
-  function updateCrosshair(patch) {
-    Object.assign(state.crosshair, patch);
-    syncUi();
-    persist();
-  }
+      function updateCrosshair(patch) {
+        Object.assign(state.crosshair, patch);
+        syncUi();
+        persist();
+      }
 
-  styleEl?.addEventListener('change', () => updateCrosshair({ style: Number(styleEl.value), activeProId: null }));
-  lengthEl?.addEventListener('input', () => updateCrosshair({ length: Number(lengthEl.value), activeProId: null }));
-  thicknessEl?.addEventListener('input', () => updateCrosshair({ thickness: Number(thicknessEl.value), activeProId: null }));
-  gapEl?.addEventListener('input', () => updateCrosshair({ gap: Number(gapEl.value), activeProId: null }));
-  alphaEl?.addEventListener('input', () => updateCrosshair({ alpha: Number(alphaEl.value), activeProId: null }));
-  outlineEl?.addEventListener('change', () => updateCrosshair({ outlineMode: Number(outlineEl.value), activeProId: null }));
-  outlineThickEl?.addEventListener('input', () => updateCrosshair({ outlineThickness: Number(outlineThickEl.value), activeProId: null }));
-  dotEl?.addEventListener('change', () => updateCrosshair({ centerDotEnabled: dotEl.checked, activeProId: null }));
-  tStyleEl?.addEventListener('change', () => updateCrosshair({ tStyleEnabled: tStyleEl.checked, activeProId: null }));
-  followRecoilEl?.addEventListener('change', () => updateCrosshair({ followRecoil: followRecoilEl.checked, activeProId: null }));
-  sniperEl?.addEventListener('input', () => updateCrosshair({ sniperWidth: Number(sniperEl.value), activeProId: null }));
-  splitDistEl?.addEventListener('input', () => updateCrosshair({ splitDistance: Number(splitDistEl.value), activeProId: null }));
-  innerAlphaEl?.addEventListener('input', () => updateCrosshair({ innerSplitAlpha: Number(innerAlphaEl.value), activeProId: null }));
-  outerAlphaEl?.addEventListener('input', () => updateCrosshair({ outerSplitAlpha: Number(outerAlphaEl.value), activeProId: null }));
-  splitRatioEl?.addEventListener('input', () => updateCrosshair({ splitSizeRatio: Number(splitRatioEl.value), activeProId: null }));
-  spreadLimitEl?.addEventListener('input', () => updateCrosshair({ dynamicSpreadLimit: Number(spreadLimitEl.value), activeProId: null }));
+      proDbCtrl = mountProDatabase({
+        state,
+        onApplyCrosshair: (patch) => updateCrosshair(patch),
+      });
 
-  colorPickerEl?.addEventListener('input', () => {
-    const rgb = hexToRgb(colorPickerEl.value);
-    if (rgb) updateCrosshair({ red: rgb.r, green: rgb.g, blue: rgb.b, activeProId: null });
-  });
+      styleEl?.addEventListener('change', () => updateCrosshair({ style: Number(styleEl.value), activeProId: null }));
+      lengthEl?.addEventListener('input', () => updateCrosshair({ length: Number(lengthEl.value), activeProId: null }));
+      thicknessEl?.addEventListener('input', () => updateCrosshair({ thickness: Number(thicknessEl.value), activeProId: null }));
+      gapEl?.addEventListener('input', () => updateCrosshair({ gap: Number(gapEl.value), activeProId: null }));
+      alphaEl?.addEventListener('input', () => updateCrosshair({ alpha: Number(alphaEl.value), activeProId: null }));
+      outlineEl?.addEventListener('change', () => updateCrosshair({ outlineMode: Number(outlineEl.value), activeProId: null }));
+      outlineThickEl?.addEventListener('input', () => updateCrosshair({ outlineThickness: Number(outlineThickEl.value), activeProId: null }));
+      dotEl?.addEventListener('change', () => updateCrosshair({ centerDotEnabled: dotEl.checked, activeProId: null }));
+      tStyleEl?.addEventListener('change', () => updateCrosshair({ tStyleEnabled: tStyleEl.checked, activeProId: null }));
+      followRecoilEl?.addEventListener('change', () => updateCrosshair({ followRecoil: followRecoilEl.checked, activeProId: null }));
+      sniperEl?.addEventListener('input', () => updateCrosshair({ sniperWidth: Number(sniperEl.value), activeProId: null }));
+      splitDistEl?.addEventListener('input', () => updateCrosshair({ splitDistance: Number(splitDistEl.value), activeProId: null }));
+      innerAlphaEl?.addEventListener('input', () => updateCrosshair({ innerSplitAlpha: Number(innerAlphaEl.value), activeProId: null }));
+      outerAlphaEl?.addEventListener('input', () => updateCrosshair({ outerSplitAlpha: Number(outerAlphaEl.value), activeProId: null }));
+      splitRatioEl?.addEventListener('input', () => updateCrosshair({ splitSizeRatio: Number(splitRatioEl.value), activeProId: null }));
+      spreadLimitEl?.addEventListener('input', () => updateCrosshair({ dynamicSpreadLimit: Number(spreadLimitEl.value), activeProId: null }));
 
-  colorSwatchesEl?.addEventListener('click', (e) => {
-    const btn = e.target.closest('[data-color-preset]');
-    if (!btn) return;
-    const preset = CROSSHAIR_COLOR_PRESETS.find((p) => p.id === btn.dataset.colorPreset);
-    if (preset) updateCrosshair({ red: preset.r, green: preset.g, blue: preset.b, activeProId: null });
-  });
+      colorPickerEl?.addEventListener('input', () => {
+        const rgb = hexToRgb(colorPickerEl.value);
+        if (rgb) updateCrosshair({ red: rgb.r, green: rgb.g, blue: rgb.b, activeProId: null });
+      });
 
-  proGridEl?.addEventListener('click', (e) => {
-    const card = e.target.closest('[data-pro-id]');
-    if (!card) return;
-    const pro = getProCrosshairById(card.dataset.proId);
-    if (!pro) return;
-    updateCrosshair({ ...pro.settings, activeProId: pro.id });
-    notify('success', t('arena.proApplied', { player: pro.player }));
-  });
+      colorSwatchesEl?.addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-color-preset]');
+        if (!btn) return;
+        const preset = CROSSHAIR_COLOR_PRESETS.find((p) => p.id === btn.dataset.colorPreset);
+        if (preset) updateCrosshair({ red: preset.r, green: preset.g, blue: preset.b, activeProId: null });
+      });
 
-  importBtnEl?.addEventListener('click', () => {
-    const code = shareInputEl?.value?.trim();
-    if (!code) return;
-    try {
-      const parsed = decodeAnyShareCode(code);
-      updateCrosshair({ ...parsed, activeProId: null });
-      notify('success', t('arena.codeImported'));
-    } catch {
-      notify('error', t('arena.invalidCode'));
-    }
-  });
-
-  copyCodeBtnEl?.addEventListener('click', async () => {
-    const code = encodeCrosshairCode(state.crosshair);
-    if (!code) return;
-    try {
-      await navigator.clipboard.writeText(code);
-      notify('success', t('arena.codeCopied'));
-    } catch {
-      shareInputEl?.select();
-    }
-  });
-
-  copyConVarsBtnEl?.addEventListener('click', async () => {
-    const text = generateCrosshairConVars(state.crosshair);
-    if (!text) return;
-    try {
-      await navigator.clipboard.writeText(text);
-      notify('success', t('arena.conVarsCopied'));
-    } catch {
-      // ignore
-    }
-  });
-
-  resetBtnEl?.addEventListener('click', () => {
-    updateCrosshair({ ...DEFAULT_CROSSHAIR });
-  });
-
-  bgBtns.forEach((btn) => {
-    btn.addEventListener('click', () => {
-      activeBg = btn.dataset.chBg || 'dust2';
-      renderBackground();
-    });
-  });
-
-  testSpreadEl?.addEventListener('change', () => {
-    simulateBurst = testSpreadEl.checked;
-  });
-
-  scopePreviewEl?.addEventListener('change', () => {
-    previewScope = scopePreviewEl.checked;
-  });
-
-  function renderFrame(now) {
-    requestAnimationFrame(renderFrame);
-
-    if (previewScope) {
-      hudCtx.clearRect(0, 0, stageWidth, stageHeight);
-      const r = Math.min(stageWidth, stageHeight) * 0.42;
-      hudCtx.fillStyle = 'rgba(0, 0, 0, 0.94)';
-      hudCtx.beginPath();
-      hudCtx.rect(0, 0, stageWidth, stageHeight);
-      hudCtx.arc(stageWidth / 2, stageHeight / 2, r, 0, Math.PI * 2, true);
-      hudCtx.fill();
-
-      const lw = Math.max(1, Number(state.crosshair.sniperWidth ?? 1));
-      hudCtx.strokeStyle = 'rgba(0, 0, 0, 0.92)';
-      hudCtx.lineWidth = lw;
-      hudCtx.beginPath();
-      hudCtx.moveTo(0, stageHeight / 2);
-      hudCtx.lineTo(stageWidth, stageHeight / 2);
-      hudCtx.moveTo(stageWidth / 2, 0);
-      hudCtx.lineTo(stageWidth / 2, stageHeight);
-      hudCtx.stroke();
-      return;
-    }
-
-    const phase = (now * 0.004) % (Math.PI * 2);
-    const limitScale = Math.max(0.25, Math.min(2.2, Number(state.crosshair.dynamicSpreadLimit ?? 227) / 140));
-    const simSpread = simulateBurst ? ((Math.sin(phase) * 0.5 + 0.5) * 14 * limitScale) : 0;
-    const simRecoil = simulateBurst
-      ? {
-          x: Math.sin(phase * 1.5) * 16,
-          y: -Math.abs(Math.sin(phase)) * 28,
+      copyConVarsBtnEl?.addEventListener('click', async () => {
+        const text = generateCrosshairConVars(state.crosshair);
+        if (!text) return;
+        try {
+          await navigator.clipboard.writeText(text);
+          notify('success', t('arena.conVarsCopied'));
+        } catch {
+          // ignore
         }
-      : { x: 0, y: 0 };
+      });
 
-    drawCrosshairOnCanvas(
-      hudCtx,
-      stageWidth,
-      stageHeight,
-      state.crosshair,
-      simSpread,
-      simRecoil,
-      1.85,
-    );
-  }
+      resetBtnEl?.addEventListener('click', () => {
+        updateCrosshair({ ...DEFAULT_CROSSHAIR });
+      });
 
-  syncUi();
-  renderBackground();
-  requestAnimationFrame(renderFrame);
-}
+        viewBtns.forEach((btn) => {
+          btn.addEventListener('click', () => {
+            if (!webglAvailable) return;
+            activeMode = btn.dataset.chView || '3d-long-wall';
+            applyViewportMode();
+          });
+        });
+
+        mapSelectEl?.addEventListener('change', () => {
+          const val = mapSelectEl.value;
+          if (!val) {
+            if (webglAvailable) activeMode = '3d-long-wall';
+          } else {
+            activeMode = val;
+          }
+          applyViewportMode();
+        });
+
+        testSpreadEl?.addEventListener('change', () => {
+          simulateBurst = testSpreadEl.checked;
+        });
+
+        scopePreviewEl?.addEventListener('change', () => {
+          previewScope = scopePreviewEl.checked;
+        });
+
+        weaponToggleEl?.addEventListener('change', () => {
+          showWeapon = weaponToggleEl.checked;
+          if (weaponRig) weaponRig.visible = showWeapon;
+        });
+
+        function renderFrame(now) {
+          requestAnimationFrame(renderFrame);
+
+          if (webglAvailable && renderer && scene && camera && activeMode.startsWith('3d-')) {
+            camera.rotation.y = baseYaw + lookYawOffset;
+            camera.rotation.x = basePitch + lookPitchOffset;
+            renderer.render(scene, camera);
+          }
+
+          if (previewScope) {
+            hudCtx.clearRect(0, 0, stageWidth, stageHeight);
+            const r = Math.min(stageWidth, stageHeight) * 0.42;
+            hudCtx.fillStyle = 'rgba(0, 0, 0, 0.94)';
+            hudCtx.beginPath();
+            hudCtx.rect(0, 0, stageWidth, stageHeight);
+            hudCtx.arc(stageWidth / 2, stageHeight / 2, r, 0, Math.PI * 2, true);
+            hudCtx.fill();
+
+            const lw = Math.max(1, Number(state.crosshair.sniperWidth ?? 1));
+            hudCtx.strokeStyle = 'rgba(0, 0, 0, 0.92)';
+            hudCtx.lineWidth = lw;
+            hudCtx.beginPath();
+            hudCtx.moveTo(0, stageHeight / 2);
+            hudCtx.lineTo(stageWidth, stageHeight / 2);
+            hudCtx.moveTo(stageWidth / 2, 0);
+            hudCtx.lineTo(stageWidth / 2, stageHeight);
+            hudCtx.stroke();
+            return;
+          }
+
+          const phase = (now * 0.004) % (Math.PI * 2);
+          const limitScale = Math.max(0.25, Math.min(2.2, Number(state.crosshair.dynamicSpreadLimit ?? 227) / 140));
+          const simSpread = simulateBurst ? ((Math.sin(phase) * 0.5 + 0.5) * 14 * limitScale) : 0;
+          const simRecoil = simulateBurst
+            ? {
+              x: Math.sin(phase * 1.5) * 16,
+              y: -Math.abs(Math.sin(phase)) * 28,
+            }
+            : { x: 0, y: 0 };
+
+          drawCrosshairOnCanvas(
+            hudCtx,
+            stageWidth,
+            stageHeight,
+            state.crosshair,
+            simSpread,
+            simRecoil,
+            1.85,
+          );
+        }
+
+        syncUi();
+        requestAnimationFrame(renderFrame);
+      }

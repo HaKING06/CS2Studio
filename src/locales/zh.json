@@ -5,7 +5,7 @@
   },
   "nav": {
     "brand": "CS2 STUDIO",
-    "version": "v0.0.3",
+    "version": "v0.0.4",
     "arena": "3D 压枪靶场",
     "buyBinds": "一键买枪",
     "viewmodel": "持枪视角",
@@ -69,7 +69,20 @@
     "copyConVars": "复制控制台指令",
     "conVarsCopied": "准星指令已复制！",
     "liveConVars": "实时 CS2 控制台参数",
-    "openArena3D": "在 Dust2 3D 靶场测试"
+    "openArena3D": "在 Dust2 3D 靶场测试",
+    "searchPlaceholder": "Search player, team, year, or CSGO- code...",
+    "filterAllYears": "All Years",
+    "filterAllTeams": "All Teams",
+    "modeScreenshots": "CS2 1080p Maps",
+    "colPlayer": "Player",
+    "colTeamEra": "Team / Year",
+    "colReticle": "Reticle",
+    "colCode": "Share Code",
+    "colConsole": "Commands",
+    "copyCmds": "ConVars",
+    "cmdsCopied": "Player console commands copied!",
+    "noResults": "No matching pros found.",
+    "dragToLook": "Drag 3D scene to look around"
   },
   "buyBinds": {
     "title": "可视化买枪绑定工作室",

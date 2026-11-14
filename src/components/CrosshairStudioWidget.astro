@@ -1,5 +1,8 @@
 ---
 import { getDictionary, getLocalizedPath, translateKey } from '../utils/i18n.js';
+import { DUST2_VIEWPOINTS } from '../utils/dust2MapLoader.js';
+import { CS2_MAP_BACKDROPS } from '../utils/mapBackdrops.js';
+import ProDatabaseSection from './ProDatabaseSection.astro';
 
 interface Props {
   lang: string;
@@ -35,13 +38,28 @@ const t = (key: string) => translateKey(dict, key);
       <div class="cs2-panel rounded-sm p-4 space-y-3 border-t-2 border-t-[#ff9d00]">
         <div class="flex flex-wrap items-center justify-between gap-2">
           <div class="flex flex-wrap items-center gap-1.5 text-xs">
-            <button type="button" data-ch-bg="dust2" class="px-2.5 py-1 rounded-sm border font-mono cursor-pointer transition-colors">Dust2 Sand</button>
-            <button type="button" data-ch-bg="mirage" class="px-2.5 py-1 rounded-sm border font-mono cursor-pointer transition-colors">Mirage Brick</button>
-            <button type="button" data-ch-bg="dark" class="px-2.5 py-1 rounded-sm border font-mono cursor-pointer transition-colors">Dark Smoke</button>
-            <button type="button" data-ch-bg="sky" class="px-2.5 py-1 rounded-sm border font-mono cursor-pointer transition-colors">Bright Sky</button>
+            {DUST2_VIEWPOINTS.map((vp) => (
+              <button type="button" data-ch-view={vp.id} class="px-2.5 py-1 rounded-sm border font-mono cursor-pointer transition-colors">
+                {vp.label}
+              </button>
+            ))}
+            <select
+              id="ch-map-select"
+              aria-label={t('arena.modeScreenshots') || 'CS2 1080p Maps'}
+              class="bg-[#0b0f17] border border-slate-700 hover:border-[#ff9d00]/60 rounded-sm px-2.5 py-1 text-xs font-mono text-slate-200 focus:border-[#ff9d00] focus:outline-none cursor-pointer"
+            >
+              <option value="">📷 {t('arena.modeScreenshots') || 'CS2 1080p Maps'}...</option>
+              {CS2_MAP_BACKDROPS.map((m) => (
+                <option value={m.id}>{m.label}</option>
+              ))}
+            </select>
           </div>
 
           <div class="flex flex-wrap items-center gap-3 text-xs">
+            <label class="inline-flex items-center gap-1.5 text-slate-300 cursor-pointer">
+              <input id="ch-show-weapon" type="checkbox" checked class="accent-[#ff9d00] cursor-pointer" />
+              <span>AK-47 (.GLB)</span>
+            </label>
             <label class="inline-flex items-center gap-1.5 text-slate-300 cursor-pointer">
               <input id="ch-test-spread" type="checkbox" class="accent-[#ff9d00] cursor-pointer" />
               <span>{t('arena.testSpread')}</span>
@@ -57,34 +75,22 @@ const t = (key: string) => translateKey(dict, key);
           id="ch-preview-stage"
           class="relative w-full aspect-[16/9] min-h-[280px] rounded-sm overflow-hidden border border-slate-700/80 bg-[#080b11]"
         >
-          <canvas id="ch-preview-bg" class="w-full h-full block"></canvas>
+          <canvas id="ch-preview-webgl" class="w-full h-full block cursor-grab active:cursor-grabbing"></canvas>
+          <img id="ch-preview-backdrop" src="/assets/maps/de_dust2_site.webp" alt="Counter-Strike 2 In-Game Map" class="hidden w-full h-full object-cover select-none" />
           <canvas id="ch-preview-hud" class="absolute inset-0 w-full h-full pointer-events-none"></canvas>
+          <div class="pointer-events-none absolute top-3 left-3 flex items-center gap-2">
+            <span id="ch-viewport-badge" class="px-2.5 py-1 rounded-sm bg-[#080b11]/85 border border-slate-700/80 text-[11px] font-mono font-bold text-[#ff9d00] backdrop-blur-sm">
+              3D Dust2 · Long A Wall
+            </span>
+            <span class="px-2 py-1 rounded-sm bg-[#080b11]/75 border border-slate-800 text-[10px] font-mono text-slate-400 backdrop-blur-sm hidden sm:inline">
+              {t('arena.dragToLook') || 'Drag 3D scene to look around'}
+            </span>
+          </div>
         </div>
       </div>
 
-      <!-- Pro Crosshair Database & Share Code -->
-      <div class="cs2-panel rounded-sm p-5 space-y-3">
-        <div class="flex flex-wrap items-center justify-between gap-3">
-          <h2 class="font-display text-xl uppercase tracking-wider font-bold text-white">{t('arena.proDatabase')}</h2>
-          <div class="flex items-center gap-2 w-full sm:w-auto">
-            <input
-              id="crosshair-share-code"
-              dir="ltr"
-              type="text"
-              placeholder="CS... / CSGO-..."
-              aria-label={t('arena.shareCode')}
-              class="flex-1 sm:w-72 bg-[#080b11] border border-slate-700 rounded-sm px-2.5 py-1.5 text-xs font-mono text-[#ff9d00] focus:border-[#ff9d00] focus:outline-none"
-            />
-            <button id="btn-import-crosshair" type="button" class="px-2.5 py-1.5 rounded-sm bg-[#ff9d00]/15 hover:bg-[#ff9d00]/25 border border-[#ff9d00]/60 text-[#ff9d00] text-xs font-bold uppercase cursor-pointer">
-              {t('arena.importCode')}
-            </button>
-            <button id="btn-copy-crosshair" type="button" class="px-2.5 py-1.5 rounded-sm bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 text-xs font-bold uppercase cursor-pointer">
-              {t('arena.copyCode')}
-            </button>
-          </div>
-        </div>
-        <div id="pro-crosshair-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5"></div>
-      </div>
+      <!-- Massive Esports Pro Crosshair Database (2012-2026) -->
+      <ProDatabaseSection lang={lang} />
 
       <!-- Live CS2 ConVars Output -->
       <div class="cs2-panel rounded-sm p-5 space-y-3">

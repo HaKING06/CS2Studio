@@ -5,7 +5,7 @@
   },
   "nav": {
     "brand": "CS2 STUDIO",
-    "version": "v0.0.3",
+    "version": "v0.0.4",
     "arena": "3D Sprey Arenası",
     "buyBinds": "Buy Bindleri",
     "viewmodel": "Viewmodel",
@@ -69,7 +69,20 @@
     "copyConVars": "ConVarları Kopyala",
     "conVarsCopied": "Crosshair ConVar komutları kopyalandı!",
     "liveConVars": "Canlı CS2 ConVar Çıktısı",
-    "openArena3D": "3D Dust2 Arenada Test Et"
+    "openArena3D": "3D Dust2 Arenada Test Et",
+    "searchPlaceholder": "Oyuncu, takım, yıl veya CSGO- kodu ara...",
+    "filterAllYears": "Tüm Yıllar",
+    "filterAllTeams": "Tüm Takımlar",
+    "modeScreenshots": "CS2 1080p Haritalar",
+    "colPlayer": "Oyuncu",
+    "colTeamEra": "Takım / Yıl",
+    "colReticle": "Nişangah",
+    "colCode": "Paylaşım Kodu",
+    "colConsole": "Komutlar",
+    "copyCmds": "Komutlar",
+    "cmdsCopied": "Oyuncu konsol komutları kopyalandı!",
+    "noResults": "Eşleşen profesyonel ayar bulunamadı.",
+    "dragToLook": "Bakış açısı için 3D sahneyi sürükleyin"
   },
   "buyBinds": {
     "title": "Görsel Satın Alma Tuşları Stüdyosu",

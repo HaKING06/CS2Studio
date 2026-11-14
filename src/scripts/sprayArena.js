@@ -18,14 +18,13 @@ import {
 import {
   CROSSHAIR_COLOR_PRESETS,
   drawCrosshairOnCanvas,
-  buildCrosshairMiniSvg,
   rgbToHex,
   hexToRgb,
 } from '../utils/crosshairCanvas.js';
-import { PRO_CROSSHAIRS, getProCrosshairById } from '../utils/proCrosshairs.js';
-import { decodeAnyShareCode, encodeCrosshairCode } from '../utils/shareCode.js';
+import { DEFAULT_FALLBACK_BACKDROP } from '../utils/mapBackdrops.js';
 import { loadState, saveState } from '../utils/storage.js';
-import { t, notify, attachGlbDropHandler } from './clientBridge.js';
+import { attachGlbDropHandler } from './clientBridge.js';
+import { mountProDatabase } from './proDatabaseWidget.js';
 
 const RECOIL_RAD_SCALE = 0.00055;
 const MAX_DECALS = 90;
@@ -161,8 +160,16 @@ class SynthAudio {
 export function mountSprayArenaPage() {
   const stageEl = document.getElementById('arena-stage');
   const glCanvas = document.getElementById('arena-webgl');
+  const fallbackImg = document.getElementById('arena-fallback-bg');
   const hudCanvas = document.getElementById('arena-crosshair');
   if (!stageEl || !glCanvas || !hudCanvas) return;
+
+  const showScreenshotBackdrop = () => {
+    if (fallbackImg) {
+      fallbackImg.src = DEFAULT_FALLBACK_BACKDROP;
+      fallbackImg.classList.remove('hidden');
+    }
+  };
 
   const state = loadState();
   const persist = () => saveState(state);
@@ -191,16 +198,25 @@ export function mountSprayArenaPage() {
     weaponSelectEl.value = state.arena.weaponId || 'ak47';
   }
 
-  // Three.js Scene + Authentic Dust2 Daylight Rig
-  const renderer = new THREE.WebGLRenderer({ canvas: glCanvas, antialias: true, powerPreference: 'high-performance' });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-  renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-  renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.05;
+  // Three.js Scene + Authentic Dust2 Daylight Rig (falls back to HD CS2 screenshot if WebGL fails)
+  let renderer = null;
+  try {
+    renderer = new THREE.WebGLRenderer({ canvas: glCanvas, antialias: true, alpha: true, powerPreference: 'high-performance' });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.05;
+  } catch {
+    showScreenshotBackdrop();
+    glCanvas.classList.add('hidden');
+  }
 
   const scene = new THREE.Scene();
   const { maxAniso } = setupDust2Lighting(scene, renderer);
+  if (!renderer) {
+    scene.background = null;
+  }
 
   const camera = new THREE.PerspectiveCamera(Number(state.viewmodel.fov || 68), 16 / 9, 0.04, 180);
   camera.rotation.order = 'YXZ';
@@ -287,16 +303,21 @@ export function mountSprayArenaPage() {
     rebuildGhostPattern();
   }
 
-  // Load real de_dust2_slice.glb asynchronously cleanly
+  // Load real de_dust2_slice.glb asynchronously; fall back to HD CS2 in-game screenshot if missing
   loadDust2Map(scene, maxAniso).then((res) => {
     mapMeshes = res.mapMeshes;
     applyRangePosition();
+    if (res.isFallback) {
+      scene.background = null;
+      renderer?.setClearColor(0x000000, 0);
+      showScreenshotBackdrop();
+    }
     if (mapBadgeEl) {
       mapBadgeEl.textContent = res.isFallback
-        ? 'DROP de_dust2_slice.glb'
-        : 'de_dust2 • Long A';
+          ? 'CS2 1080p · de_dust2'
+          : 'de_dust2 • Long A';
       if (res.isFallback) {
-        mapBadgeEl.classList.add('text-red-400', 'border-red-500/40');
+        mapBadgeEl.classList.add('text-amber-300', 'border-amber-500/40');
       }
     }
   });
@@ -314,236 +335,236 @@ export function mountSprayArenaPage() {
   });
   const decalGeom = new THREE.PlaneGeometry(0.11, 0.11);
 
-    function addBulletDecalWorld(worldPt, worldNormal) {
-      const mesh = new THREE.Mesh(decalGeom, decalMat);
-      mesh.position.copy(worldPt).addScaledVector(worldNormal, 0.012 + decalPool.length * 0.0003);
-      mesh.lookAt(worldPt.clone().add(worldNormal));
-      mesh.rotateZ(Math.random() * Math.PI * 2);
-      decalsWorldGroup.add(mesh);
-      decalPool.push(mesh);
-      if (decalPool.length > MAX_DECALS) {
-        decalsWorldGroup.remove(decalPool.shift());
-      }
+  function addBulletDecalWorld(worldPt, worldNormal) {
+    const mesh = new THREE.Mesh(decalGeom, decalMat);
+    mesh.position.copy(worldPt).addScaledVector(worldNormal, 0.012 + decalPool.length * 0.0003);
+    mesh.lookAt(worldPt.clone().add(worldNormal));
+    mesh.rotateZ(Math.random() * Math.PI * 2);
+    decalsWorldGroup.add(mesh);
+    decalPool.push(mesh);
+    if (decalPool.length > MAX_DECALS) {
+      decalsWorldGroup.remove(decalPool.shift());
     }
+  }
 
-    function clearDecals() {
-      while (decalPool.length) {
-        decalsWorldGroup.remove(decalPool.pop());
-      }
+  function clearDecals() {
+    while (decalPool.length) {
+      decalsWorldGroup.remove(decalPool.pop());
     }
+  }
 
-    function spawnTracer(startWorld, endWorld) {
-      const geom = new THREE.BufferGeometry().setFromPoints([startWorld, endWorld]);
-      const mat = new THREE.LineBasicMaterial({ color: '#fde68a', transparent: true, opacity: 0.88 });
-      const line = new THREE.Line(geom, mat);
-      scene.add(line);
-      tracers.push({ line, life: 0.075 });
-    }
+  function spawnTracer(startWorld, endWorld) {
+    const geom = new THREE.BufferGeometry().setFromPoints([startWorld, endWorld]);
+    const mat = new THREE.LineBasicMaterial({ color: '#fde68a', transparent: true, opacity: 0.88 });
+    const line = new THREE.Line(geom, mat);
+    scene.add(line);
+    tracers.push({ line, life: 0.075 });
+  }
 
-    const viewmodelRig = new THREE.Group();
-    camera.add(viewmodelRig);
+  const viewmodelRig = new THREE.Group();
+  camera.add(viewmodelRig);
 
-    const weaponContainer = new THREE.Group();
-    viewmodelRig.add(weaponContainer);
+  const weaponContainer = new THREE.Group();
+  viewmodelRig.add(weaponContainer);
 
-    const muzzleFlash = new THREE.Mesh(
-      new THREE.SphereGeometry(0.042, 8, 8),
-      new THREE.MeshBasicMaterial({ color: '#fef08a', transparent: true, opacity: 0 }),
+  const muzzleFlash = new THREE.Mesh(
+    new THREE.SphereGeometry(0.042, 8, 8),
+    new THREE.MeshBasicMaterial({ color: '#fef08a', transparent: true, opacity: 0 }),
+  );
+  const muzzleLight = new THREE.PointLight('#fbbf24', 0, 4);
+  weaponContainer.add(muzzleFlash);
+  weaponContainer.add(muzzleLight);
+
+  let currentWeaponMesh = null;
+  let activeModelKey = 'ak47';
+
+  function applyViewmodelTransform() {
+    const vm = state.viewmodel;
+    const pose = FPS_POSES[activeModelKey] || FPS_POSES.ak47;
+
+    camera.fov = Math.max(54, Math.min(75, Number(vm.fov ?? 68)));
+    camera.updateProjectionMatrix();
+
+    const xShift = (Number(vm.offsetX ?? 2.5) - 2.5) * 0.025;
+    const yShift = -(Number(vm.offsetY ?? 0)) * 0.036;
+    const zShift = (Number(vm.offsetZ ?? -1.5) + 1.5) * 0.025;
+
+    viewmodelRig.position.set(
+      pose.pos[0] + xShift,
+      pose.pos[1] + zShift,
+      pose.pos[2] + yShift,
     );
-    const muzzleLight = new THREE.PointLight('#fbbf24', 0, 4);
-    weaponContainer.add(muzzleFlash);
-    weaponContainer.add(muzzleLight);
+    viewmodelRig.rotation.set(pose.rot[0], pose.rot[1], pose.rot[2]);
+  }
 
-    let currentWeaponMesh = null;
-    let activeModelKey = 'ak47';
+  function mountWeaponObject(normalizedGroup, labelText) {
+    if (currentWeaponMesh) {
+      weaponContainer.remove(currentWeaponMesh);
+    }
+    currentWeaponMesh = normalizedGroup;
+    weaponContainer.add(currentWeaponMesh);
+    activeModelKey = normalizedGroup.userData?.modelKey || 'ak47';
 
-    function applyViewmodelTransform() {
-      const vm = state.viewmodel;
-      const pose = FPS_POSES[activeModelKey] || FPS_POSES.ak47;
-
-      camera.fov = Math.max(54, Math.min(75, Number(vm.fov ?? 68)));
-      camera.updateProjectionMatrix();
-
-      const xShift = (Number(vm.offsetX ?? 2.5) - 2.5) * 0.025;
-      const yShift = -(Number(vm.offsetY ?? 0)) * 0.036;
-      const zShift = (Number(vm.offsetZ ?? -1.5) + 1.5) * 0.025;
-
-      viewmodelRig.position.set(
-        pose.pos[0] + xShift,
-        pose.pos[1] + zShift,
-        pose.pos[2] + yShift,
-      );
-      viewmodelRig.rotation.set(pose.rot[0], pose.rot[1], pose.rot[2]);
+    const muzzleObj = currentWeaponMesh.getObjectByName('Muzzle');
+    if (muzzleObj) {
+      muzzleFlash.position.copy(muzzleObj.position);
+      muzzleLight.position.copy(muzzleObj.position);
+    } else {
+      muzzleFlash.position.set(0, 0.05, -0.45);
+      muzzleLight.position.set(0, 0.05, -0.45);
     }
 
-    function mountWeaponObject(normalizedGroup, labelText) {
-      if (currentWeaponMesh) {
-        weaponContainer.remove(currentWeaponMesh);
-      }
-      currentWeaponMesh = normalizedGroup;
-      weaponContainer.add(currentWeaponMesh);
-      activeModelKey = normalizedGroup.userData?.modelKey || 'ak47';
+    if (weaponBadgeEl && labelText) {
+      weaponBadgeEl.textContent = labelText;
+    }
+    applyViewmodelTransform();
+  }
 
-      const muzzleObj = currentWeaponMesh.getObjectByName('Muzzle');
-      if (muzzleObj) {
-        muzzleFlash.position.copy(muzzleObj.position);
-        muzzleLight.position.copy(muzzleObj.position);
-      } else {
-        muzzleFlash.position.set(0, 0.05, -0.45);
-        muzzleLight.position.set(0, 0.05, -0.45);
-      }
-
-      if (weaponBadgeEl && labelText) {
-        weaponBadgeEl.textContent = labelText;
-      }
-      applyViewmodelTransform();
+  async function equipWeapon(weaponId) {
+    const data = getWeaponData(weaponId);
+    activeModelKey = inferModelKey(data.modelUrl);
+    if (weaponBadgeEl) {
+      weaponBadgeEl.textContent = `${data.name} • $${data.price}`;
     }
 
-    async function equipWeapon(weaponId) {
-      const data = getWeaponData(weaponId);
-      activeModelKey = inferModelKey(data.modelUrl);
-      if (weaponBadgeEl) {
-        weaponBadgeEl.textContent = `${data.name} • $${data.price}`;
-      }
-
-      try {
-        const normalized = await loadNormalizedWeapon(data.modelUrl);
-        mountWeaponObject(normalized, `${data.name} • $${data.price}`);
-      } catch {
-        notify('error', `Could not load model: ${data.modelUrl}`);
-      }
-
-      resetWeaponBurst();
-      rebuildGhostPattern();
-      updateHudStats();
+    try {
+      const normalized = await loadNormalizedWeapon(data.modelUrl);
+      mountWeaponObject(normalized, `${data.name} • $${data.price}`);
+    } catch {
+      notify('error', `Could not load model: ${data.modelUrl}`);
     }
 
-    attachGlbDropHandler(stageEl, async (file) => {
-      const normalized = await loadNormalizedWeaponFromFile(file);
-      mountWeaponObject(normalized, file.name);
-      notify('success', file.name);
-    });
+    resetWeaponBurst();
+    rebuildGhostPattern();
+    updateHudStats();
+  }
 
-    // Firing & Recoil State
-    const audio = new SynthAudio();
-    const stats = { shots: 0, hits: 0, bullseyes: 0 };
-    const shotRaycaster = new THREE.Raycaster();
+  attachGlbDropHandler(stageEl, async (file) => {
+    const normalized = await loadNormalizedWeaponFromFile(file);
+    mountWeaponObject(normalized, file.name);
+    notify('success', file.name);
+  });
 
-    let isFiring = false;
-    let isPointerLocked = false;
-    let burstIndex = 0;
-    let nextShotTime = 0;
-    let recoilYaw = 0;
-    let recoilPitch = 0;
-    let aimYaw = 0;
-    let aimPitch = 0;
-    let kickOffset = 0;
-    let dynamicSpreadPx = 0;
-    let muzzleFlashTimer = 0;
-    let lastPointer = { x: 0, y: 0 };
+  // Firing & Recoil State
+  const audio = new SynthAudio();
+  const stats = { shots: 0, hits: 0, bullseyes: 0 };
+  const shotRaycaster = new THREE.Raycaster();
 
-    function updateMagCounter() {
-      const w = getWeaponData(state.arena.weaponId || 'ak47');
-      if (magCounterEl) {
-        magCounterEl.textContent = `${Math.max(0, w.magSize - burstIndex)} / ${w.magSize}`;
-      }
+  let isFiring = false;
+  let isPointerLocked = false;
+  let burstIndex = 0;
+  let nextShotTime = 0;
+  let recoilYaw = 0;
+  let recoilPitch = 0;
+  let aimYaw = 0;
+  let aimPitch = 0;
+  let kickOffset = 0;
+  let dynamicSpreadPx = 0;
+  let muzzleFlashTimer = 0;
+  let lastPointer = { x: 0, y: 0 };
+
+  function updateMagCounter() {
+    const w = getWeaponData(state.arena.weaponId || 'ak47');
+    if (magCounterEl) {
+      magCounterEl.textContent = `${Math.max(0, w.magSize - burstIndex)} / ${w.magSize}`;
+    }
+  }
+
+  function resetWeaponBurst() {
+    burstIndex = 0;
+    recoilYaw = 0;
+    recoilPitch = 0;
+    updateMagCounter();
+  }
+
+  function updateHudStats() {
+    if (statShotsEl) statShotsEl.textContent = String(stats.shots);
+    if (statHitsEl) statHitsEl.textContent = String(stats.hits);
+    const pct = stats.shots > 0 ? Math.round((stats.hits / stats.shots) * 100) : 100;
+    if (statAccuracyEl) statAccuracyEl.textContent = `${pct}%`;
+    updateMagCounter();
+  }
+
+  function fireSingleShot(nowMs) {
+    const weaponId = state.arena.weaponId || 'ak47';
+    const w = getWeaponData(weaponId);
+
+    if (burstIndex >= w.magSize) {
+      isFiring = false;
+      return;
     }
 
-    function resetWeaponBurst() {
-      burstIndex = 0;
+    const step = w.pattern[Math.min(burstIndex, w.pattern.length - 1)] || { bulletDx: 0, bulletDy: 0, delayMs: w.fireIntervalMs };
+
+    if (burstIndex === 0) {
       recoilYaw = 0;
       recoilPitch = 0;
-      updateMagCounter();
+    } else {
+      recoilYaw -= step.bulletDx * RECOIL_RAD_SCALE;
+      recoilPitch += step.bulletDy * RECOIL_RAD_SCALE;
     }
 
-    function updateHudStats() {
-      if (statShotsEl) statShotsEl.textContent = String(stats.shots);
-      if (statHitsEl) statHitsEl.textContent = String(stats.hits);
-      const pct = stats.shots > 0 ? Math.round((stats.hits / stats.shots) * 100) : 100;
-      if (statAccuracyEl) statAccuracyEl.textContent = `${pct}%`;
-      updateMagCounter();
+    const spreadRad = w.spreadBase * (1 + burstIndex * 0.04);
+    const randYaw = (Math.random() - 0.5) * spreadRad;
+    const randPitch = (Math.random() - 0.5) * spreadRad;
+
+    const effectiveYaw = (state.arena.mode === 'wall' ? 0 : aimYaw) + recoilYaw + randYaw;
+    const effectivePitch = (state.arena.mode === 'wall' ? 0 : aimPitch) + recoilPitch + randPitch;
+
+    const shootEuler = new THREE.Euler(effectivePitch, rangeLayout.yaw + effectiveYaw, 0, 'YXZ');
+    const shootDir = new THREE.Vector3(0, 0, -1).applyEuler(shootEuler).normalize();
+
+    shotRaycaster.set(camera.position, shootDir);
+    const rayTargets = mapMeshes.length ? [...mapMeshes] : [targetPlane];
+    const hits = shotRaycaster.intersectObjects(rayTargets, false);
+
+    const dist = rangeLayout.actualDistance || Number(state.arena.distanceMeters || 20);
+    let hitPoint = camera.position.clone().addScaledVector(shootDir, dist);
+    let hitNormal = rangeLayout.wallNormal.clone();
+
+    if (hits.length > 0) {
+      hitPoint = hits[0].point.clone();
+      if (hits[0].face) {
+        hitNormal
+          .copy(hits[0].face.normal)
+          .transformDirection(hits[0].object.matrixWorld)
+          .normalize();
+      }
     }
 
-    function fireSingleShot(nowMs) {
-      const weaponId = state.arena.weaponId || 'ak47';
-      const w = getWeaponData(weaponId);
+    addBulletDecalWorld(hitPoint, hitNormal);
 
-      if (burstIndex >= w.magSize) {
-        isFiring = false;
-        return;
-      }
+    const muzzleWorld = new THREE.Vector3();
+    muzzleFlash.getWorldPosition(muzzleWorld);
+    spawnTracer(muzzleWorld, hitPoint);
 
-      const step = w.pattern[Math.min(burstIndex, w.pattern.length - 1)] || { bulletDx: 0, bulletDy: 0, delayMs: w.fireIntervalMs };
-
-      if (burstIndex === 0) {
-        recoilYaw = 0;
-        recoilPitch = 0;
-      } else {
-        recoilYaw -= step.bulletDx * RECOIL_RAD_SCALE;
-        recoilPitch += step.bulletDy * RECOIL_RAD_SCALE;
-      }
-
-      const spreadRad = w.spreadBase * (1 + burstIndex * 0.04);
-      const randYaw = (Math.random() - 0.5) * spreadRad;
-      const randPitch = (Math.random() - 0.5) * spreadRad;
-
-      const effectiveYaw = (state.arena.mode === 'wall' ? 0 : aimYaw) + recoilYaw + randYaw;
-      const effectivePitch = (state.arena.mode === 'wall' ? 0 : aimPitch) + recoilPitch + randPitch;
-
-      const shootEuler = new THREE.Euler(effectivePitch, rangeLayout.yaw + effectiveYaw, 0, 'YXZ');
-      const shootDir = new THREE.Vector3(0, 0, -1).applyEuler(shootEuler).normalize();
-
-      shotRaycaster.set(camera.position, shootDir);
-      const rayTargets = mapMeshes.length ? [...mapMeshes] : [targetPlane];
-      const hits = shotRaycaster.intersectObjects(rayTargets, false);
-
-      const dist = rangeLayout.actualDistance || Number(state.arena.distanceMeters || 20);
-      let hitPoint = camera.position.clone().addScaledVector(shootDir, dist);
-      let hitNormal = rangeLayout.wallNormal.clone();
-
-      if (hits.length > 0) {
-        hitPoint = hits[0].point.clone();
-        if (hits[0].face) {
-          hitNormal
-            .copy(hits[0].face.normal)
-            .transformDirection(hits[0].object.matrixWorld)
-            .normalize();
-        }
-      }
-
-      addBulletDecalWorld(hitPoint, hitNormal);
-
-      const muzzleWorld = new THREE.Vector3();
-      muzzleFlash.getWorldPosition(muzzleWorld);
-      spawnTracer(muzzleWorld, hitPoint);
-
-      const localImpact = targetWallGroup.worldToLocal(hitPoint.clone());
-      const radialDist = Math.hypot(localImpact.x, localImpact.y);
-      stats.shots += 1;
-      if (radialDist <= 0.44) {
-        stats.hits += 1;
-        if (radialDist <= 0.17) stats.bullseyes += 1;
-      }
-
-      if (state.arena.mode === 'control') {
-        guideDotMesh.position.set(Math.tan(recoilYaw) * dist, Math.tan(-recoilPitch) * dist, 0.02);
-      } else {
-        guideDotMesh.position.set(localImpact.x, localImpact.y, 0.02);
-      }
-
-      kickOffset = Math.min(1.0, kickOffset + 0.55);
-      const limitScale = Math.max(0.2, Math.min(2.2, Number(state.crosshair.dynamicSpreadLimit ?? 227) / 140));
-      dynamicSpreadPx = Math.min(24 * limitScale, dynamicSpreadPx + 4.5);
-      muzzleFlashTimer = 0.045;
-      audio.playShot(weaponId);
-
-      burstIndex += 1;
-      nextShotTime = nowMs + (step.delayMs || w.fireIntervalMs || 100);
-      if (!w.auto) isFiring = false;
-      updateHudStats();
+    const localImpact = targetWallGroup.worldToLocal(hitPoint.clone());
+    const radialDist = Math.hypot(localImpact.x, localImpact.y);
+    stats.shots += 1;
+    if (radialDist <= 0.44) {
+      stats.hits += 1;
+      if (radialDist <= 0.17) stats.bullseyes += 1;
     }
 
-    glCanvas.addEventListener('pointerdown', (e) => {
+    if (state.arena.mode === 'control') {
+      guideDotMesh.position.set(Math.tan(recoilYaw) * dist, Math.tan(-recoilPitch) * dist, 0.02);
+    } else {
+      guideDotMesh.position.set(localImpact.x, localImpact.y, 0.02);
+    }
+
+    kickOffset = Math.min(1.0, kickOffset + 0.55);
+    const limitScale = Math.max(0.2, Math.min(2.2, Number(state.crosshair.dynamicSpreadLimit ?? 227) / 140));
+    dynamicSpreadPx = Math.min(24 * limitScale, dynamicSpreadPx + 4.5);
+    muzzleFlashTimer = 0.045;
+    audio.playShot(weaponId);
+
+    burstIndex += 1;
+    nextShotTime = nowMs + (step.delayMs || w.fireIntervalMs || 100);
+    if (!w.auto) isFiring = false;
+    updateHudStats();
+  }
+
+    stageEl.addEventListener('pointerdown', (e) => {
       if (e.button !== 0) return;
       audio.ensureCtx();
       lastPointer = { x: e.clientX, y: e.clientY };
@@ -694,7 +715,9 @@ export function mountSprayArenaPage() {
       stageWidth = rect.width;
       stageHeight = rect.height;
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      renderer.setSize(stageWidth, stageHeight, false);
+      if (renderer) {
+        renderer.setSize(stageWidth, stageHeight, false);
+      }
       camera.aspect = stageWidth / stageHeight;
       camera.updateProjectionMatrix();
       hudCanvas.width = Math.round(stageWidth * dpr);
@@ -705,12 +728,7 @@ export function mountSprayArenaPage() {
     new ResizeObserver(handleResize).observe(stageEl);
     handleResize();
 
-    // Crosshair Studio Controls + Pro Database wiring
-    const proGridEl = document.getElementById('pro-crosshair-grid');
-    const shareInputEl = document.getElementById('crosshair-share-code');
-    const importBtnEl = document.getElementById('btn-import-crosshair');
-    const copyBtnEl = document.getElementById('btn-copy-crosshair');
-
+    // Crosshair Studio Controls + Shared Esports Pro Database wiring
     const styleEl = document.getElementById('ch-style');
     const lengthEl = document.getElementById('ch-length');
     const thicknessEl = document.getElementById('ch-thickness');
@@ -747,188 +765,139 @@ export function mountSprayArenaPage() {
       }).join('');
     }
 
-    function renderProGrid() {
-      if (!proGridEl) return;
-      proGridEl.innerHTML = PRO_CROSSHAIRS.map((pro) => {
-        const isSelected = state.crosshair.activeProId === pro.id;
-        return `<button type="button" data-pro-id="${pro.id}"
-          isSelected
-            ? 'bg-[#ff9d00]/12 border-[#ff9d00] shadow-[0_0_20px_rgba(255,157,0,0.16)]'
-            : 'bg-slate-900/80 border-slate-800 hover:border-[#ff9d00]/60 hover:bg-slate-900'
-      }">
-        ${ buildCrosshairMiniSvg(pro.settings)
+    let proDbCtrl = null;
+
+      function syncCrosshairUi() {
+        const ch = state.crosshair;
+        if (styleEl) styleEl.value = String(ch.style);
+        if (lengthEl) lengthEl.value = String(ch.length);
+        if (thicknessEl) thicknessEl.value = String(ch.thickness);
+        if (gapEl) gapEl.value = String(ch.gap);
+        if (alphaEl) alphaEl.value = String(ch.alpha);
+        if (outlineEl) outlineEl.value = String(ch.outlineMode);
+        if (outlineThicknessEl) outlineThicknessEl.value = String(ch.outlineThickness ?? 1);
+        if (dotEl) dotEl.checked = Boolean(ch.centerDotEnabled);
+        if (tStyleEl) tStyleEl.checked = Boolean(ch.tStyleEnabled);
+        if (followRecoilEl) followRecoilEl.checked = Boolean(ch.followRecoil);
+        if (sniperEl) sniperEl.value = String(ch.sniperWidth ?? 1);
+        if (colorPickerEl) colorPickerEl.value = rgbToHex(ch.red, ch.green, ch.blue);
+
+      if (valEls.length) valEls.length.textContent = String(ch.length);
+      if (valEls.thickness) valEls.thickness.textContent = String(ch.thickness);
+      if (valEls.gap) valEls.gap.textContent = String(ch.gap);
+      if (valEls.alpha) valEls.alpha.textContent = String(ch.alpha);
+      if (valEls.outlineThickness) valEls.outlineThickness.textContent = Number(ch.outlineThickness ?? 1).toFixed(1);
+      if (valEls.sniperWidth) valEls.sniperWidth.textContent = String(ch.sniperWidth ?? 1);
+      renderSwatches();
+      proDbCtrl?.sync();
     }
-    <div class="min-w-0 flex-1">
-      <div class="flex items-center justify-between gap-1">
-        <span class="font-bold text-sm text-white truncate">${pro.player}</span>
-        <span class="text-[10px] px-1.5 py-0.5 rounded-sm bg-slate-800 text-[#ff9d00] border border-slate-700 shrink-0">${pro.tag}</span>
-      </div>
-      <div class="text-xs text-slate-400 truncate">${pro.team} • ${pro.role}</div>
-      <div class="text-[10px] text-slate-500 font-mono truncate mt-0.5">${pro.resolution}</div>
-    </div>
-      </button > `;
-    }).join('');
-  }
 
-  function syncCrosshairUi() {
-    const ch = state.crosshair;
-    if (styleEl) styleEl.value = String(ch.style);
-    if (lengthEl) lengthEl.value = String(ch.length);
-    if (thicknessEl) thicknessEl.value = String(ch.thickness);
-    if (gapEl) gapEl.value = String(ch.gap);
-    if (alphaEl) alphaEl.value = String(ch.alpha);
-    if (outlineEl) outlineEl.value = String(ch.outlineMode);
-    if (outlineThicknessEl) outlineThicknessEl.value = String(ch.outlineThickness ?? 1);
-    if (dotEl) dotEl.checked = Boolean(ch.centerDotEnabled);
-    if (tStyleEl) tStyleEl.checked = Boolean(ch.tStyleEnabled);
-    if (followRecoilEl) followRecoilEl.checked = Boolean(ch.followRecoil);
-    if (sniperEl) sniperEl.value = String(ch.sniperWidth ?? 1);
-    if (colorPickerEl) colorPickerEl.value = rgbToHex(ch.red, ch.green, ch.blue);
-
-    if (valEls.length) valEls.length.textContent = String(ch.length);
-    if (valEls.thickness) valEls.thickness.textContent = String(ch.thickness);
-    if (valEls.gap) valEls.gap.textContent = String(ch.gap);
-    if (valEls.alpha) valEls.alpha.textContent = String(ch.alpha);
-    if (valEls.outlineThickness) valEls.outlineThickness.textContent = Number(ch.outlineThickness ?? 1).toFixed(1);
-    if (valEls.sniperWidth) valEls.sniperWidth.textContent = String(ch.sniperWidth ?? 1);
-    if (shareInputEl) shareInputEl.value = encodeCrosshairCode(ch);
-    renderSwatches();
-    renderProGrid();
-  }
-
-  function updateCrosshair(patch) {
-    Object.assign(state.crosshair, patch);
-    syncCrosshairUi();
-    persist();
-  }
-
-  styleEl?.addEventListener('change', () => updateCrosshair({ style: Number(styleEl.value), activeProId: null }));
-  lengthEl?.addEventListener('input', () => updateCrosshair({ length: Number(lengthEl.value), activeProId: null }));
-  thicknessEl?.addEventListener('input', () => updateCrosshair({ thickness: Number(thicknessEl.value), activeProId: null }));
-  gapEl?.addEventListener('input', () => updateCrosshair({ gap: Number(gapEl.value), activeProId: null }));
-  alphaEl?.addEventListener('input', () => updateCrosshair({ alpha: Number(alphaEl.value), activeProId: null }));
-  outlineEl?.addEventListener('change', () => updateCrosshair({ outlineMode: Number(outlineEl.value), activeProId: null }));
-  outlineThicknessEl?.addEventListener('input', () => updateCrosshair({ outlineThickness: Number(outlineThicknessEl.value), activeProId: null }));
-  dotEl?.addEventListener('change', () => updateCrosshair({ centerDotEnabled: dotEl.checked, activeProId: null }));
-  tStyleEl?.addEventListener('change', () => updateCrosshair({ tStyleEnabled: tStyleEl.checked, activeProId: null }));
-  followRecoilEl?.addEventListener('change', () => updateCrosshair({ followRecoil: followRecoilEl.checked, activeProId: null }));
-  sniperEl?.addEventListener('input', () => updateCrosshair({ sniperWidth: Number(sniperEl.value), activeProId: null }));
-  colorPickerEl?.addEventListener('input', () => {
-    const rgb = hexToRgb(colorPickerEl.value);
-    if (rgb) updateCrosshair({ red: rgb.r, green: rgb.g, blue: rgb.b, activeProId: null });
-  });
-
-  colorSwatchesEl?.addEventListener('click', (e) => {
-    const btn = e.target.closest('[data-color-preset]');
-    if (!btn) return;
-    const preset = CROSSHAIR_COLOR_PRESETS.find((p) => p.id === btn.dataset.colorPreset);
-    if (preset) updateCrosshair({ red: preset.r, green: preset.g, blue: preset.b, activeProId: null });
-  });
-
-  proGridEl?.addEventListener('click', (e) => {
-    const card = e.target.closest('[data-pro-id]');
-    if (!card) return;
-    const pro = getProCrosshairById(card.dataset.proId);
-    if (!pro) return;
-    updateCrosshair({ ...pro.settings, activeProId: pro.id });
-    notify('success', t('arena.proApplied', { player: pro.player }));
-  });
-
-  importBtnEl?.addEventListener('click', () => {
-    const code = shareInputEl?.value?.trim();
-    if (!code) return;
-    try {
-      const parsed = decodeAnyShareCode(code);
-      updateCrosshair({ ...parsed, activeProId: null });
-      notify('success', t('arena.codeImported'));
-    } catch {
-      notify('error', t('arena.invalidCode'));
+    function updateCrosshair(patch) {
+      Object.assign(state.crosshair, patch);
+      syncCrosshairUi();
+      persist();
     }
-  });
 
-  copyBtnEl?.addEventListener('click', async () => {
-    const code = encodeCrosshairCode(state.crosshair);
-    if (!code) return;
-    try {
-      await navigator.clipboard.writeText(code);
-      notify('success', t('arena.codeCopied'));
-    } catch {
-      shareInputEl?.select();
-    }
-  });
+    proDbCtrl = mountProDatabase({
+      state,
+      onApplyCrosshair: (patch) => updateCrosshair(patch),
+    });
 
-  let lastFrame = performance.now();
-  function animate(now) {
-    requestAnimationFrame(animate);
-    const dt = Math.min(0.05, (now - lastFrame) / 1000);
-    lastFrame = now;
+    styleEl?.addEventListener('change', () => updateCrosshair({ style: Number(styleEl.value), activeProId: null }));
+    lengthEl?.addEventListener('input', () => updateCrosshair({ length: Number(lengthEl.value), activeProId: null }));
+    thicknessEl?.addEventListener('input', () => updateCrosshair({ thickness: Number(thicknessEl.value), activeProId: null }));
+    gapEl?.addEventListener('input', () => updateCrosshair({ gap: Number(gapEl.value), activeProId: null }));
+    alphaEl?.addEventListener('input', () => updateCrosshair({ alpha: Number(alphaEl.value), activeProId: null }));
+    outlineEl?.addEventListener('change', () => updateCrosshair({ outlineMode: Number(outlineEl.value), activeProId: null }));
+    outlineThicknessEl?.addEventListener('input', () => updateCrosshair({ outlineThickness: Number(outlineThicknessEl.value), activeProId: null }));
+    dotEl?.addEventListener('change', () => updateCrosshair({ centerDotEnabled: dotEl.checked, activeProId: null }));
+    tStyleEl?.addEventListener('change', () => updateCrosshair({ tStyleEnabled: tStyleEl.checked, activeProId: null }));
+    followRecoilEl?.addEventListener('change', () => updateCrosshair({ followRecoil: followRecoilEl.checked, activeProId: null }));
+    sniperEl?.addEventListener('input', () => updateCrosshair({ sniperWidth: Number(sniperEl.value), activeProId: null }));
+    colorPickerEl?.addEventListener('input', () => {
+      const rgb = hexToRgb(colorPickerEl.value);
+      if (rgb) updateCrosshair({ red: rgb.r, green: rgb.g, blue: rgb.b, activeProId: null });
+    });
 
-    if (isFiring && now >= nextShotTime) {
-      fireSingleShot(now);
-    } else if (!isFiring) {
-      const recover = Math.exp(-8.5 * dt);
-      recoilYaw *= recover;
-      recoilPitch *= recover;
-      if (Math.abs(recoilPitch) < 0.0004 && burstIndex > 0) {
-        burstIndex = 0;
-        updateMagCounter();
+    colorSwatchesEl?.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-color-preset]');
+      if (!btn) return;
+      const preset = CROSSHAIR_COLOR_PRESETS.find((p) => p.id === btn.dataset.colorPreset);
+      if (preset) updateCrosshair({ red: preset.r, green: preset.g, blue: preset.b, activeProId: null });
+    });
+
+    let lastFrame = performance.now();
+    function animate(now) {
+      requestAnimationFrame(animate);
+      const dt = Math.min(0.05, (now - lastFrame) / 1000);
+      lastFrame = now;
+
+      if (isFiring && now >= nextShotTime) {
+        fireSingleShot(now);
+      } else if (!isFiring) {
+        const recover = Math.exp(-8.5 * dt);
+        recoilYaw *= recover;
+        recoilPitch *= recover;
+        if (Math.abs(recoilPitch) < 0.0004 && burstIndex > 0) {
+          burstIndex = 0;
+          updateMagCounter();
+        }
       }
-    }
 
-    dynamicSpreadPx *= Math.exp(-10 * dt);
+      dynamicSpreadPx *= Math.exp(-10 * dt);
 
-    const camPunchScale = state.arena.mode === 'wall' ? 0.12 : 0.35;
-    camera.rotation.y = rangeLayout.yaw + aimYaw + recoilYaw * camPunchScale;
-    camera.rotation.x = aimPitch + recoilPitch * camPunchScale;
+      const camPunchScale = state.arena.mode === 'wall' ? 0.12 : 0.35;
+      camera.rotation.y = rangeLayout.yaw + aimYaw + recoilYaw * camPunchScale;
+      camera.rotation.x = aimPitch + recoilPitch * camPunchScale;
 
-    kickOffset *= Math.exp(-12 * dt);
-    const breathe = Math.sin(now * 0.0018) * 0.0022;
-    weaponContainer.position.set(0, breathe, kickOffset * 0.045);
-    weaponContainer.rotation.x = kickOffset * 0.065;
+      kickOffset *= Math.exp(-12 * dt);
+      const breathe = Math.sin(now * 0.0018) * 0.0022;
+      weaponContainer.position.set(0, breathe, kickOffset * 0.045);
+      weaponContainer.rotation.x = kickOffset * 0.065;
 
-    if (muzzleFlashTimer > 0) {
-      muzzleFlashTimer -= dt;
-      muzzleFlash.material.opacity = 0.92;
-      muzzleFlash.scale.setScalar(0.8 + Math.random() * 0.6);
-      muzzleLight.intensity = 3.5;
-    } else {
-      muzzleFlash.material.opacity = 0;
-      muzzleLight.intensity = 0;
-    }
-
-    for (let i = tracers.length - 1; i >= 0; i--) {
-      const tr = tracers[i];
-      tr.life -= dt;
-      if (tr.life <= 0) {
-        scene.remove(tr.line);
-        tr.line.geometry.dispose();
-        tr.line.material.dispose();
-        tracers.splice(i, 1);
+      if (muzzleFlashTimer > 0) {
+        muzzleFlashTimer -= dt;
+        muzzleFlash.material.opacity = 0.92;
+        muzzleFlash.scale.setScalar(0.8 + Math.random() * 0.6);
+        muzzleLight.intensity = 3.5;
       } else {
-        tr.line.material.opacity = tr.life / 0.075;
+        muzzleFlash.material.opacity = 0;
+        muzzleLight.intensity = 0;
       }
+
+      for (let i = tracers.length - 1; i >= 0; i--) {
+        const tr = tracers[i];
+        tr.life -= dt;
+        if (tr.life <= 0) {
+          scene.remove(tr.line);
+          tr.line.geometry.dispose();
+          tr.line.material.dispose();
+          tracers.splice(i, 1);
+        } else {
+          tr.line.material.opacity = tr.life / 0.075;
+        }
+      }
+
+      renderer?.render(scene, camera);
+
+      const pxPerRad = (stageHeight / 2) / Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
+      const offsetX = -(recoilYaw * (1 - camPunchScale)) * pxPerRad;
+      const offsetY = -(recoilPitch * (1 - camPunchScale)) * pxPerRad;
+
+      drawCrosshairOnCanvas(
+        hudCtx,
+        stageWidth,
+        stageHeight,
+        state.crosshair,
+        dynamicSpreadPx,
+        { x: offsetX, y: offsetY },
+        1.65,
+      );
     }
 
-    renderer.render(scene, camera);
-
-    const pxPerRad = (stageHeight / 2) / Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
-    const offsetX = -(recoilYaw * (1 - camPunchScale)) * pxPerRad;
-    const offsetY = -(recoilPitch * (1 - camPunchScale)) * pxPerRad;
-
-    drawCrosshairOnCanvas(
-      hudCtx,
-      stageWidth,
-      stageHeight,
-      state.crosshair,
-      dynamicSpreadPx,
-      { x: offsetX, y: offsetY },
-      1.65,
-    );
+    syncArenaControls();
+    syncCrosshairUi();
+    equipWeapon(state.arena.weaponId || 'ak47');
+    updateHudStats();
+    requestAnimationFrame(animate);
   }
-
-  syncArenaControls();
-  syncCrosshairUi();
-  equipWeapon(state.arena.weaponId || 'ak47');
-  updateHudStats();
-  requestAnimationFrame(animate);
-}

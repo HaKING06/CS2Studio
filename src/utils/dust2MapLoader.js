@@ -67,27 +67,34 @@ function tuneMapMaterials(root, maxAniso) {
   return mapMeshes;
 }
 
-function createEmergencyDustPlane() {
-  const grp = new THREE.Group();
-  const floorGeo = new THREE.PlaneGeometry(80, 80);
-  const floorMat = new THREE.MeshStandardMaterial({ color: 0xc2ab84, roughness: 0.92 });
-  const floor = new THREE.Mesh(floorGeo, floorMat);
-  floor.rotation.x = -Math.PI / 2;
-  floor.receiveShadow = true;
-
-  const wallGeo = new THREE.BoxGeometry(1, 10, 26);
-  const wallMat = new THREE.MeshStandardMaterial({ color: 0xd4be98, roughness: 0.88 });
-  const wall = new THREE.Mesh(wallGeo, wallMat);
-  wall.position.set(16, 5, -7.2);
-  wall.receiveShadow = true;
-
-  grp.add(floor, wall);
-  return { root: grp, mapMeshes: [floor, wall], isFallback: true };
-}
+  export const DUST2_VIEWPOINTS = [
+    {
+      id: '3d-long-wall',
+      label: '3D Dust2 · Long A Wall',
+      pos: [-4.08, 1.62, -7.2],
+      yaw: -Math.PI / 2,
+      pitch: 0,
+    },
+    {
+      id: '3d-a-sign',
+      label: '3D Dust2 · A Sign & Door',
+      pos: [-2.4, 1.65, -2.5],
+      yaw: 0.12,
+      pitch: 0.05,
+    },
+    {
+      id: '3d-courtyard',
+      label: '3D Dust2 · A Approach',
+      pos: [-15.5, 1.78, -4.5],
+      yaw: -Math.PI * 0.42,
+      pitch: -0.02,
+    },
+  ];
 
 /**
  * Load the authentic de_dust2_slice.glb map model into the scene.
- * Logs a styled manual drop warning to DevTools console if the GLB cannot be loaded.
+ * Returns isFallback=true (without creating geometric placeholders) when unreachable,
+ * allowing callers to display real HD in-game CS2 screenshots instead.
  */
 export async function loadDust2Map(scene, maxAniso = 8) {
   const loader = new GLTFLoader();
@@ -100,15 +107,34 @@ export async function loadDust2Map(scene, maxAniso = 8) {
     return { root, mapMeshes, isFallback: false };
   } catch (err) {
     console.error(
-      '%c[CS2 STUDIO] Missing or unreachable Dust2 map GLB (/models/de_dust2_slice.glb).%c\nDrop your authentic "de_dust2_slice.glb" file directly into /public/models/de_dust2_slice.glb and refresh.',
+      '%c[CS2 STUDIO] Missing or unreachable Dust2 map GLB (/models/de_dust2_slice.glb).%c\nDrop your authentic "de_dust2_slice.glb" file directly into /public/models/de_dust2_slice.glb and refresh. Switching to HD CS2 in-game screenshot fallback.',
       'background:#ff9d00;color:#0b0f17;font-weight:900;padding:4px 8px;border-radius:3px;',
       'color:#fbbf24;font-weight:600;',
       err,
     );
-    const emergency = createEmergencyDustPlane();
-    scene.add(emergency.root);
-    return emergency;
+    return { root: null, mapMeshes: [], isFallback: true };
   }
+}
+
+export function getDust2ViewPose(mapMeshes, viewId = '3d-long-wall') {
+  const preset = DUST2_VIEWPOINTS.find((v) => v.id === viewId) || DUST2_VIEWPOINTS[0];
+  const pos = new THREE.Vector3(...preset.pos);
+  if (mapMeshes?.length) {
+    const ray = new THREE.Raycaster(
+      new THREE.Vector3(pos.x, pos.y + 4, pos.z),
+      new THREE.Vector3(0, -1, 0),
+    );
+    const hits = ray.intersectObjects(mapMeshes, false);
+    if (hits.length > 0 && hits[0].point.y > -6 && hits[0].point.y < 6) {
+      pos.y = hits[0].point.y + 1.62;
+    }
+  }
+  return {
+    id: preset.id,
+    pos,
+    yaw: preset.yaw,
+    pitch: preset.pitch,
+  };
 }
 
 /**

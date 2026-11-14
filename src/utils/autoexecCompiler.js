@@ -35,7 +35,7 @@ export function buildAutoexecText(state) {
 
   const sections = [
     `// ============================================================================`,
-    `// CS2 STUDIO v${state.version || '0.0.3'} — Competitive Counter-Strike 2 Config`,
+    `// CS2 STUDIO v${state.version || '0.0.4'} — Competitive Counter-Strike 2 Config`,
     `// Generated at https://cs2studio.haking.tr | Support: cs2studio@haking.tr`,
     `// Place in: Steam\\steamapps\\common\\Counter-Strike Global Offensive\\game\\csgo\\cfg\\autoexec.cfg`,
     `// Launch Option: +exec autoexec.cfg`,

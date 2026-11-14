@@ -5,7 +5,7 @@
   },
   "nav": {
     "brand": "CS2 STUDIO",
-    "version": "v0.0.3",
+    "version": "v0.0.4",
     "arena": "3D Арена спрея",
     "buyBinds": "Бинды закупки",
     "viewmodel": "Viewmodel",
@@ -69,7 +69,20 @@
     "copyConVars": "Копировать ConVars",
     "conVarsCopied": "Консольные команды прицела скопированы!",
     "liveConVars": "Команды CS2 в реальном времени",
-    "openArena3D": "Тест на Dust2 3D"
+    "openArena3D": "Тест на Dust2 3D",
+    "searchPlaceholder": "Поиск игрока, команды, года или CSGO- кода...",
+    "filterAllYears": "Все годы",
+    "filterAllTeams": "Все команды",
+    "modeScreenshots": "Карты CS2 1080p",
+    "colPlayer": "Игрок",
+    "colTeamEra": "Команда / Год",
+    "colReticle": "Прицел",
+    "colCode": "Код прицела",
+    "colConsole": "Команды",
+    "copyCmds": "Консоль",
+    "cmdsCopied": "Консольные команды игрока скопированы!",
+    "noResults": "Подходящие про-прицелы не найдены.",
+    "dragToLook": "Перетащите 3D сцену для обзора"
   },
   "buyBinds": {
     "title": "Визуальная студия биндов закупки",

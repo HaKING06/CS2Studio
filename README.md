@@ -1,12 +1,12 @@
 <div align="center">
 
-![CS2 Studio v0.0.3 Promotional Banner](./public/assets/promo-banner.png)
+![CS2 Studio v0.0.4 Promotional Banner](./public/assets/promo-banner.png)
 
-# CS2 STUDIO `v0.0.3`
+# CS2 STUDIO `v0.0.4`
 
-**The 100% Client-Side Counter-Strike 2 Configuration Suite — 3D Dust2 Spray Arena, CS2 Follow-Recoil Crosshair Generator, Live Viewmodel Simulator, Visual Buy Binds & Autoexec Exporter.**
+**The 100% Client-Side Counter-Strike 2 Configuration Suite — 3D Dust2 Spray Arena, Real 1080p CS2 Map Backdrops, 670+ Pro Esports Crosshair Database (2012–2026), Live Viewmodel Simulator, Visual Buy Binds & Autoexec Exporter.**
 
-[![Version](https://img.shields.io/badge/Version-0.0.3-ff9d00?style=for-the-badge&logo=counter-strike&logoColor=white)](https://cs2studio.haking.tr)
+[![Version](https://img.shields.io/badge/Version-0.0.4-ff9d00?style=for-the-badge&logo=counter-strike&logoColor=white)](https://cs2studio.haking.tr)
 [![License: MIT](https://img.shields.io/badge/License-MIT-22c55e?style=for-the-badge)](./LICENSE)
 [![Build](https://img.shields.io/badge/Astro-Static%20MPA-0ea5e9?style=for-the-badge&logo=astro&logoColor=white)](https://astro.build)
 [![Cloudflare Pages](https://img.shields.io/badge/Deploy-Cloudflare%20Pages-f38020?style=for-the-badge&logo=cloudflarepages&logoColor=white)](https://pages.cloudflare.com)
@@ -18,15 +18,15 @@
 
 ---
 
-## Core Modules & v0.0.3 Upgrades
+## Core Modules & v0.0.4 Upgrades
 
 CS2 Studio runs entirely on static edge HTML + client-side browser storage (`localStorage`) with **zero database or login walls**:
 
 | Route | Module | Key Capabilities |
 | :--- | :--- | :--- |
 | `/` | **Command Dashboard** | Live synced telemetry badges across LocalStorage modules |
-| `/spray-arena` | **3D Dust2 Spray Arena** | Authentic `de_dust2_slice.glb` A-Long range, Source 2 HD `.glb` weapons, interactive recoil compensation vs pattern wall, raycasted bullet decals & `10m/20m/35m` distances |
-| `/crosshair` | **CS2 Crosshair Generator** | `cl_crosshair_recoil` (Follow Recoil), CS2 Style 2 split spread parameters (`splitDistance`, `innerSplitAlpha`, `outerSplitAlpha`, `splitSizeRatio`), outline thickness, AWP scope width & exact `CS...` / `CSGO-...` Share Code codec |
+| `/spray-arena` | **3D Dust2 Spray Arena** | Authentic `de_dust2_slice.glb` A-Long range (with automatic real 1080p `de_dust2` WebGL fallback), Source 2 HD `.glb` weapons, interactive recoil compensation vs pattern wall, raycasted bullet decals & `10m/20m/35m` distances |
+| `/crosshair` | **CS2 Crosshair Generator & Pro DB** | Live 3D `de_dust2_slice.glb` viewpoints + **10 Real 1080p CS2 Map Screenshots** (Dust2, Mirage, Inferno, Nuke, Ancient, Anubis, Overpass, Train), `cl_crosshair_recoil`, CS2 Style 2 split spread controls, and a searchable **674-entry Esports Pro Crosshair Database** (`2012`–`2026`, avatars, teams, Major eras, `CSGO-...` codes & raw `cl_crosshair*` commands) |
 | `/viewmodel` | **Live Viewmodel Simulator** | Real-time FOV and `offset_x` / `offset_y` / `offset_z` controls rendered in 3D on Dust2 Long A with Desktop / Couch / Classic presets |
 | `/buy-binds` | **Visual Buy Binds Studio** | Full mechanical keyboard layout with SortableJS drag-and-drop & Pro Numpad / F-Key presets |
 | `/autoexec` | **Autoexec.cfg Exporter** | Compiles crosshair, viewmodel, buy binds, sensitivity, FPS tweaks, telemetry, radar & competitive audio into downloadable `autoexec.cfg` |

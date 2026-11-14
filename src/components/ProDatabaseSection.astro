@@ -1,0 +1,124 @@
+---
+import { getDictionary, translateKey } from '../utils/i18n.js';
+import { PRO_CROSSHAIRS, PRO_YEAR_FILTERS, PRO_TEAMS } from '../utils/proCrosshairs.js';
+
+interface Props {
+  lang: string;
+}
+
+const { lang } = Astro.props;
+const dict = getDictionary(lang);
+const t = (key: string) => translateKey(dict, key);
+---
+
+<div class="cs2-panel rounded-sm p-5 space-y-4 border-t-2 border-t-[#ff9d00]/80">
+  <!-- Header & Share Code Import/Copy -->
+  <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+    <div class="flex items-center gap-2.5">
+      <h2 class="font-display text-2xl uppercase tracking-wider font-bold text-white leading-none">
+        {t('arena.proDatabase')}
+      </h2>
+      <span class="px-2 py-0.5 rounded-sm bg-[#ff9d00]/15 border border-[#ff9d00]/40 text-[#ff9d00] text-[11px] font-mono font-bold">
+        {PRO_CROSSHAIRS.length} PROS · 2012–2026
+      </span>
+    </div>
+
+    <div class="flex items-center gap-2 w-full lg:w-auto">
+      <input
+        id="crosshair-share-code"
+        dir="ltr"
+        type="text"
+        placeholder="CSGO-... / CS..."
+        aria-label={t('arena.shareCode')}
+        class="flex-1 lg:w-72 bg-[#080b11] border border-slate-700 rounded-sm px-2.5 py-1.5 text-xs font-mono text-[#ff9d00] focus:border-[#ff9d00] focus:outline-none"
+      />
+      <button
+        id="btn-import-crosshair"
+        type="button"
+        class="px-2.5 py-1.5 rounded-sm bg-[#ff9d00]/15 hover:bg-[#ff9d00]/25 border border-[#ff9d00]/60 text-[#ff9d00] text-xs font-bold uppercase cursor-pointer whitespace-nowrap"
+      >
+        {t('arena.importCode')}
+      </button>
+      <button
+        id="btn-copy-crosshair"
+        type="button"
+        class="px-2.5 py-1.5 rounded-sm bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 text-xs font-bold uppercase cursor-pointer whitespace-nowrap"
+      >
+        {t('arena.copyCode')}
+      </button>
+    </div>
+  </div>
+
+  <!-- Search + Year/Major Era Tabs + Team Filter -->
+  <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 bg-[#080b11]/90 border border-slate-800 rounded-sm p-3">
+    <div class="relative flex-1 min-w-[200px]">
+      <input
+        id="pro-db-search"
+        type="search"
+        placeholder={t('arena.searchPlaceholder') || 'Search player, team, year, or CSGO- code...'}
+        class="w-full bg-[#0b0f17] border border-slate-700/90 rounded-sm pl-8 pr-3 py-1.5 text-xs text-white placeholder-slate-500 focus:border-[#ff9d00] focus:outline-none"
+      />
+      <svg aria-hidden="true" viewBox="0 0 24 24" class="w-3.5 h-3.5 text-slate-500 absolute left-2.5 top-1/2 -translate-y-1/2 fill-none stroke-current" stroke-width="2">
+        <circle cx="11" cy="11" r="7" />
+        <path d="M21 21l-4.35-4.35" />
+      </svg>
+    </div>
+
+    <div class="flex flex-wrap items-center gap-1.5" role="group" aria-label="Filter by Year">
+      {PRO_YEAR_FILTERS.map((yf, idx) => (
+        <button
+          type="button"
+          data-pro-year={yf.id}
+          class={`px-2.5 py-1 rounded-sm text-[11px] font-mono font-semibold border transition-colors cursor-pointer ${
+            idx === 0
+              ? 'bg-[#ff9d00]/20 border-[#ff9d00] text-[#ff9d00]'
+              : 'bg-[#0b0f17] border-slate-700 text-slate-400 hover:text-white hover:border-slate-500'
+          }`}
+        >
+          {yf.label || t(yf.labelKey)}
+        </button>
+      ))}
+    </div>
+
+    <select
+      id="pro-db-team"
+      aria-label={t('arena.filterAllTeams') || 'All Teams'}
+      class="bg-[#0b0f17] border border-slate-700 rounded-sm px-2.5 py-1.5 text-xs text-slate-200 focus:border-[#ff9d00] focus:outline-none cursor-pointer"
+    >
+      <option value="all">{t('arena.filterAllTeams') || 'All Teams'}</option>
+      {PRO_TEAMS.map((team) => (
+        <option value={team}>{team}</option>
+      ))}
+    </select>
+  </div>
+
+  <!-- Sleek Searchable Pro Table -->
+  <div id="pro-crosshair-grid" class="overflow-x-auto border border-slate-800 rounded-sm bg-[#080b11]/80">
+    <table class="w-full text-left border-collapse min-w-[660px]">
+      <thead>
+        <tr class="border-b border-slate-800 bg-[#0b0f17] text-[10px] font-mono uppercase tracking-wider text-slate-400">
+          <th class="py-2.5 px-3">{t('arena.colPlayer') || 'Player'}</th>
+          <th class="py-2.5 px-3">{t('arena.colTeamEra') || 'Team / Year'}</th>
+          <th class="py-2.5 px-3 text-center">{t('arena.colReticle') || 'Reticle'}</th>
+          <th class="py-2.5 px-3 hidden sm:table-cell">{t('arena.colCode') || 'Share Code'}</th>
+          <th class="py-2.5 px-3 text-right">{t('arena.colConsole') || 'Commands'}</th>
+        </tr>
+      </thead>
+      <tbody id="pro-db-tbody" class="divide-y divide-slate-800/70 text-xs"></tbody>
+    </table>
+  </div>
+
+  <!-- Pagination Footer -->
+  <div class="flex flex-wrap items-center justify-between gap-2 text-xs font-mono text-slate-400">
+    <span id="pro-db-count">0 / {PRO_CROSSHAIRS.length}</span>
+    <div class="flex items-center gap-1.5">
+      <button id="pro-db-prev" type="button" class="px-2.5 py-1 rounded-sm border border-slate-700 bg-[#0b0f17] hover:border-[#ff9d00] text-slate-300 disabled:opacity-40 cursor-pointer">
+        ← Prev
+      </button>
+      <span id="pro-db-page" class="px-2 text-slate-300">1 / 1</span>
+      <button id="pro-db-next" type="button" class="px-2.5 py-1 rounded-sm border border-slate-700 bg-[#0b0f17] hover:border-[#ff9d00] text-slate-300 disabled:opacity-40 cursor-pointer">
+        Next →
+      </button>
+    </div>
+  </div>
+</div>

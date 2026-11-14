@@ -5,7 +5,7 @@
   },
   "nav": {
     "brand": "CS2 STUDIO",
-    "version": "v0.0.3",
+    "version": "v0.0.4",
     "arena": "Arena 3D de Spray",
     "buyBinds": "Binds de Compra",
     "viewmodel": "Viewmodel",
@@ -69,7 +69,20 @@
     "copyConVars": "Copiar ConVars",
     "conVarsCopied": "Comandos ConVars copiados!",
     "liveConVars": "ConVars CS2 ao Vivo",
-    "openArena3D": "Testar na Arena 3D Dust2"
+    "openArena3D": "Testar na Arena 3D Dust2",
+    "searchPlaceholder": "Buscar jogador, time, ano ou código CSGO-...",
+    "filterAllYears": "Todos os Anos",
+    "filterAllTeams": "Todos os Times",
+    "modeScreenshots": "Mapas CS2 1080p",
+    "colPlayer": "Jogador",
+    "colTeamEra": "Time / Ano",
+    "colReticle": "Mira",
+    "colCode": "Código",
+    "colConsole": "Comandos",
+    "copyCmds": "ConVars",
+    "cmdsCopied": "Comandos copiados!",
+    "noResults": "Nenhum jogador encontrado.",
+    "dragToLook": "Arraste a cena 3D para olhar ao redor"
   },
   "buyBinds": {
     "title": "Estúdio Visual de Binds de Compra",

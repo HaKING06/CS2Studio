@@ -5,7 +5,7 @@
   },
   "nav": {
     "brand": "CS2 STUDIO",
-    "version": "v0.0.3",
+    "version": "v0.0.4",
     "arena": "3D 스프레이 아레나",
     "buyBinds": "구매 바인드",
     "viewmodel": "뷰모델",
@@ -69,7 +69,20 @@
     "copyConVars": "ConVars 복사",
     "conVarsCopied": "조준선 콘솔 명령어가 복사되었습니다!",
     "liveConVars": "실시간 CS2 ConVars",
-    "openArena3D": "3D Dust2에서 테스트"
+    "openArena3D": "3D Dust2에서 테스트",
+    "searchPlaceholder": "Search player, team, year, or CSGO- code...",
+    "filterAllYears": "All Years",
+    "filterAllTeams": "All Teams",
+    "modeScreenshots": "CS2 1080p Maps",
+    "colPlayer": "Player",
+    "colTeamEra": "Team / Year",
+    "colReticle": "Reticle",
+    "colCode": "Share Code",
+    "colConsole": "Commands",
+    "copyCmds": "ConVars",
+    "cmdsCopied": "Player console commands copied!",
+    "noResults": "No matching pros found.",
+    "dragToLook": "Drag 3D scene to look around"
   },
   "buyBinds": {
     "title": "비주얼 구매 바인드 스튜디오",
