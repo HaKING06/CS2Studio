@@ -1,0 +1,38 @@
+---
+import { SUPPORTED_LANGUAGES, getLocalizedPath } from '../utils/i18n.js';
+
+interface Props {
+  lang: string;
+  pageKey: 'home' | 'spray-arena' | 'viewmodel' | 'buy-binds' | 'autoexec';
+}
+
+const { lang, pageKey } = Astro.props;
+---
+
+<div class="relative flex items-center">
+  <label for="lang-switcher" class="sr-only">Language</label>
+  <select
+    id="lang-switcher"
+    aria-label="Language Selector"
+    data-current-lang={lang}
+    class="bg-slate-900/90 hover:bg-slate-800 border border-slate-700/80 hover:border-cyan-400/60 text-slate-200 text-xs font-medium rounded-lg px-2.5 py-1.5 pr-7 focus:outline-none focus:border-cyan-400 cursor-pointer transition-colors"
+  >
+    {SUPPORTED_LANGUAGES.map((l) => (
+      <option value={getLocalizedPath(l.code, pageKey, true)} selected={l.code === lang}>
+        {l.flag} {l.nativeName} ({l.code.toUpperCase()})
+      </option>
+    ))}
+  </select>
+</div>
+
+<script is:inline>
+  (function () {
+    const sel = document.getElementById('lang-switcher');
+    if (!sel) return;
+    sel.addEventListener('change', function () {
+      if (sel.value && window.location.pathname !== sel.value) {
+        window.location.href = sel.value;
+      }
+    });
+  })();
+</script>

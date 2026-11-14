@@ -1,0 +1,15 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import BuyBindsWidget from '../../components/BuyBindsWidget.astro';
+import { getDictionary, getStaticLangPaths, translateKey } from '../../utils/i18n.js';
+
+export const getStaticPaths = getStaticLangPaths;
+
+const { lang } = Astro.params;
+const dict = getDictionary(lang);
+const t = (key: string) => translateKey(dict, key);
+---
+
+<BaseLayout lang={lang} pageKey="buy-binds" isPrefixed={true} title={t('pages.buyBindsTitle')} description={t('pages.buyBindsDesc')}>
+  <BuyBindsWidget lang={lang} />
+</BaseLayout>

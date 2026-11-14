@@ -1,0 +1,12 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import AutoexecWidget from '../components/AutoexecWidget.astro';
+import { getDictionary, translateKey } from '../utils/i18n.js';
+
+const dict = getDictionary('en');
+const t = (key: string) => translateKey(dict, key);
+---
+
+<BaseLayout lang="en" pageKey="autoexec" isPrefixed={false} title={t('pages.autoexecTitle')} description={t('pages.autoexecDesc')}>
+  <AutoexecWidget lang="en" isPrefixed={false} />
+</BaseLayout>

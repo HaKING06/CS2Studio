@@ -1,0 +1,25 @@
+{
+  "name": "cs2-studio",
+  "version": "0.0.1",
+  "description": "CS2 Studio - 100% client-side Static MPA suite for CS2 3D Crosshair & Spray Arena, Live Viewmodel Simulator, Visual Buy Binds, and Autoexec Generator.",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "check": "astro check"
+  },
+  "dependencies": {
+    "@astrojs/sitemap": "^3.7.0",
+    "@tailwindcss/vite": "^4.3.5",
+    "astro": "^5.17.1",
+    "csgo-sharecode": "^7.0.1",
+    "file-saver": "^2.0.5",
+    "lucide": "^1.73.0",
+    "sortablejs": "^1.15.7",
+    "sweetalert2": "^11.26.25",
+    "tailwindcss": "^4.3.5",
+    "three": "^0.187.0"
+  }
+}

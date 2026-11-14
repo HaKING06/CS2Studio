@@ -1,0 +1,15 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import SprayArenaWidget from '../../components/SprayArenaWidget.astro';
+import { getDictionary, getStaticLangPaths, translateKey } from '../../utils/i18n.js';
+
+export const getStaticPaths = getStaticLangPaths;
+
+const { lang } = Astro.params;
+const dict = getDictionary(lang);
+const t = (key: string) => translateKey(dict, key);
+---
+
+<BaseLayout lang={lang} pageKey="spray-arena" isPrefixed={true} title={t('pages.arenaTitle')} description={t('pages.arenaDesc')}>
+  <SprayArenaWidget lang={lang} />
+</BaseLayout>

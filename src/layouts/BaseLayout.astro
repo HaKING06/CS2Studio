@@ -1,0 +1,269 @@
+---
+import '../styles/global.css';
+import LanguageSwitcher from '../components/LanguageSwitcher.astro';
+import {
+  SUPPORTED_LANGUAGES,
+  getDictionary,
+  getLangInfo,
+  getLocalizedPath,
+  translateKey,
+} from '../utils/i18n.js';
+
+interface Props {
+  lang?: string;
+  pageKey?: 'home' | 'spray-arena' | 'viewmodel' | 'buy-binds' | 'autoexec';
+  title?: string;
+  description?: string;
+  isPrefixed?: boolean;
+}
+
+const {
+  lang = 'en',
+  pageKey = 'home',
+  title,
+  description,
+  isPrefixed = true,
+} = Astro.props;
+
+const dict = getDictionary(lang);
+const langInfo = getLangInfo(lang);
+const t = (key: string, vars?: Record<string, any>) => translateKey(dict, key, vars);
+
+const pageTitle = title || t('meta.title');
+const pageDescription = description || t('meta.description');
+
+const siteOrigin = 'https://cs2studio.haking.tr';
+const canonicalPath = getLocalizedPath(lang, pageKey, isPrefixed);
+const canonicalUrl = `${siteOrigin}${canonicalPath}`;
+const xDefaultUrl = `${siteOrigin}${getLocalizedPath('en', pageKey, false)}`;
+
+// Trim injected client runtime dict strictly to toast/interactive feedback keys
+const clientDict = {
+  arena: {
+    proApplied: dict?.arena?.proApplied || "Applied {{player}}'s crosshair!",
+    invalidCode: dict?.arena?.invalidCode || 'Invalid CSGO crosshair share code.',
+    codeImported: dict?.arena?.codeImported || 'Crosshair share code imported!',
+    codeCopied: dict?.arena?.codeCopied || 'Crosshair share code copied!',
+  },
+  buyBinds: {
+    assigned: dict?.buyBinds?.assigned || 'Bound {{item}} to {{key}}',
+    cleared: dict?.buyBinds?.cleared || 'Cleared bind on {{key}}',
+    clearAll: dict?.buyBinds?.clearAll || 'Clear All Binds',
+    confirmClear: dict?.buyBinds?.confirmClear || 'Remove all configured buy binds?',
+    presetProNumpad: dict?.buyBinds?.presetProNumpad || 'Pro Numpad Standard',
+    presetFKeys: dict?.buyBinds?.presetFKeys || 'F1–F8 Utility & Rifles',
+  },
+  autoexec: {
+    copiedSuccess: dict?.autoexec?.copiedSuccess || 'autoexec.cfg copied to clipboard!',
+    downloadSuccess: dict?.autoexec?.downloadSuccess || 'autoexec.cfg downloaded!',
+    resetAll: dict?.autoexec?.resetAll || 'Reset Studio',
+  },
+  common: dict?.common || { yes: 'Yes', cancel: 'Cancel', reset: 'Reset' },
+};
+
+const navLinks = [
+  { key: 'home' as const, label: t('nav.home'), href: getLocalizedPath(lang, 'home', isPrefixed) },
+  { key: 'spray-arena' as const, label: t('nav.arena'), href: getLocalizedPath(lang, 'spray-arena', isPrefixed) },
+  { key: 'viewmodel' as const, label: t('nav.viewmodel'), href: getLocalizedPath(lang, 'viewmodel', isPrefixed) },
+  { key: 'buy-binds' as const, label: t('nav.buyBinds'), href: getLocalizedPath(lang, 'buy-binds', isPrefixed) },
+  { key: 'autoexec' as const, label: t('nav.autoexec'), href: getLocalizedPath(lang, 'autoexec', isPrefixed) },
+];
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'SoftwareApplication',
+  name: 'CS2 Studio',
+  applicationCategory: 'GameApplication',
+  operatingSystem: 'Web Browser',
+  softwareVersion: '0.0.1',
+  url: canonicalUrl,
+  inLanguage: lang,
+  description: pageDescription,
+  keywords: 'CS2 3D crosshair generator, CS2 spray test online, CS2 visual autoexec maker, pro CS2 crosshairs, CS2 buy binds, CS2 viewmodel simulator',
+  offers: {
+    '@type': 'Offer',
+    price: '0',
+    priceCurrency: 'USD',
+  },
+  author: {
+    '@type': 'Organization',
+    name: 'CS2 Studio',
+    email: 'cs2studio@haking.tr',
+    url: siteOrigin,
+  },
+};
+---
+
+<!doctype html>
+<html lang={lang} dir={langInfo.dir} class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{pageTitle}</title>
+    <meta name="description" content={pageDescription} />
+    <meta
+      name="keywords"
+      content="CS2 3D crosshair generator, CS2 spray test online, CS2 visual autoexec maker, pro CS2 crosshairs, CS2 viewmodel FOV, CS2 buy binds generator"
+    />
+    <meta name="theme-color" content="#070b14" />
+
+    <link rel="icon" href="/assets/favicon.ico" sizes="any" />
+    <link rel="apple-touch-icon" href="/assets/logo.png" />
+
+    <link rel="canonical" href={canonicalUrl} />
+    <link rel="alternate" hreflang="x-default" href={xDefaultUrl} />
+    {SUPPORTED_LANGUAGES.map((l) => (
+      <link rel="alternate" hreflang={l.code} href={`${siteOrigin}${getLocalizedPath(l.code, pageKey, true)}`} />
+    ))}
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="CS2 Studio" />
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={pageDescription} />
+    <meta property="og:url" content={canonicalUrl} />
+    <meta property="og:locale" content={lang} />
+    <meta property="og:image" content={`${siteOrigin}/assets/og-banner.png`} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={pageTitle} />
+    <meta name="twitter:description" content={pageDescription} />
+    <meta name="twitter:image" content={`${siteOrigin}/assets/og-banner.png`} />
+
+    <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+    <script is:inline define:vars={{ clientDict }}>
+      window.__CS2_I18N__ = clientDict;
+    </script>
+  </head>
+
+  <body class="min-h-screen flex flex-col cs2-grid-bg selection:bg-cyan-500/30 selection:text-cyan-100">
+    <!-- Top Tactical Navbar -->
+    <header class="sticky top-0 z-40 border-b border-slate-800/80 bg-slate-950/85 backdrop-blur-xl">
+      <div class="max-w-[1440px] mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
+        <!-- Brand Logo (Raster PNG, Zero SVG) -->
+        <a href={getLocalizedPath(lang, 'home', isPrefixed)} class="flex items-center gap-3 shrink-0 group">
+          <img
+            src="/assets/logo.png"
+            alt="CS2 Studio Logo"
+            width="40"
+            height="40"
+            class="w-10 h-10 object-contain drop-shadow-[0_0_12px_rgba(34,211,238,0.45)] transition-transform group-hover:scale-105"
+          />
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="font-black tracking-wider text-white text-base sm:text-lg">{t('nav.brand')}</span>
+              <span class="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-cyan-500/15 text-cyan-300 border border-cyan-500/30">
+                {t('nav.version')}
+              </span>
+            </div>
+            <div class="text-[10px] text-slate-400 font-mono hidden sm:block">cs2studio.haking.tr</div>
+          </div>
+        </a>
+
+        <!-- Multi-Page Navigation Links -->
+        <nav aria-label="Main Navigation" class="hidden lg:flex items-center gap-1.5 text-sm font-medium">
+          {navLinks.map((item) => {
+            const active = item.key === pageKey;
+            return (
+              <a
+                href={item.href}
+                class={`px-3 py-1.5 rounded-lg transition-all ${
+                  active
+                    ? 'bg-cyan-500/15 text-cyan-300 border border-cyan-400/40 shadow-[0_0_12px_rgba(34,211,238,0.12)]'
+                    : 'text-slate-300 hover:text-white hover:bg-slate-800/70 border border-transparent'
+                }`}
+              >
+                {item.label}
+              </a>
+            );
+          })}
+        </nav>
+
+        <!-- Actions: URL Language Switcher & Buy Me A Coffee -->
+        <div class="flex items-center gap-2.5">
+          <LanguageSwitcher lang={lang} pageKey={pageKey} />
+
+          <a
+            href="https://www.buymeacoffee.com/haking"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-semibold text-xs bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 shadow-[0_0_18px_rgba(245,158,11,0.3)] transition-all hover:scale-[1.02]"
+          >
+            <span aria-hidden="true">☕</span>
+            <span class="hidden sm:inline">{t('nav.supportBmc')}</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- Mobile Horizontal Nav -->
+      <nav aria-label="Mobile Navigation" class="lg:hidden border-t border-slate-800/70 px-4 py-2 flex items-center gap-1.5 overflow-x-auto text-xs font-medium">
+        {navLinks.map((item) => {
+          const active = item.key === pageKey;
+          return (
+            <a
+              href={item.href}
+              class={`px-2.5 py-1 rounded-md shrink-0 transition-colors ${
+                active
+                  ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-400/40'
+                  : 'text-slate-300 hover:text-white bg-slate-900/70 border border-slate-800'
+              }`}
+            >
+              {item.label}
+            </a>
+          );
+        })}
+      </nav>
+    </header>
+
+    <!-- Page Main Content -->
+    <main class="flex-1 max-w-[1440px] w-full mx-auto px-4 sm:px-6 py-8 sm:py-10">
+      <slot />
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-800/80 bg-slate-950/90 mt-12">
+      <div class="max-w-[1440px] mx-auto px-4 sm:px-6 py-8 flex flex-col md:flex-row items-center justify-between gap-6">
+        <div class="flex items-center gap-3">
+          <img src="/assets/logo.png" alt="CS2 Studio" width="32" height="32" class="w-8 h-8 object-contain" />
+          <div>
+            <div class="text-sm font-bold text-white">CS2 Studio v0.0.1</div>
+            <p class="text-xs text-slate-400">{t('footer.madeFor')}</p>
+          </div>
+        </div>
+
+        <div class="flex flex-wrap items-center justify-center gap-4 text-xs text-slate-400">
+          <a href={`mailto:cs2studio@haking.tr`} class="hover:text-cyan-300 transition-colors font-mono">
+            {t('footer.contact')}: cs2studio@haking.tr
+          </a>
+          <span class="text-slate-700">|</span>
+          <a
+            href="https://www.buymeacoffee.com/haking"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="inline-flex items-center gap-1.5 text-amber-400 hover:text-amber-300 font-semibold"
+          >
+            <span>☕</span>
+            <span>buymeacoffee.com/haking</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- Localized Crawl Links for SEO Discovery -->
+      <div class="max-w-[1440px] mx-auto px-4 sm:px-6 pb-6 border-t border-slate-900 pt-4">
+        <div class="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[11px] text-slate-500">
+          {SUPPORTED_LANGUAGES.map((l) => (
+            <a
+              href={getLocalizedPath(l.code, pageKey, true)}
+              class={`hover:text-cyan-300 transition-colors ${l.code === lang ? 'text-cyan-400 font-semibold' : ''}`}
+            >
+              {l.flag} {l.nativeName}
+            </a>
+          ))}
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

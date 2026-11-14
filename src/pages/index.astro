@@ -1,0 +1,12 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import HomeDashboardWidget from '../components/HomeDashboardWidget.astro';
+import { getDictionary, translateKey } from '../utils/i18n.js';
+
+const dict = getDictionary('en');
+const t = (key: string) => translateKey(dict, key);
+---
+
+<BaseLayout lang="en" pageKey="home" isPrefixed={false} title={t('meta.title')} description={t('meta.description')}>
+  <HomeDashboardWidget lang="en" isPrefixed={false} />
+</BaseLayout>

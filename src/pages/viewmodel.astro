@@ -1,0 +1,12 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ViewmodelWidget from '../components/ViewmodelWidget.astro';
+import { getDictionary, translateKey } from '../utils/i18n.js';
+
+const dict = getDictionary('en');
+const t = (key: string) => translateKey(dict, key);
+---
+
+<BaseLayout lang="en" pageKey="viewmodel" isPrefixed={false} title={t('pages.viewmodelTitle')} description={t('pages.viewmodelDesc')}>
+  <ViewmodelWidget lang="en" />
+</BaseLayout>
