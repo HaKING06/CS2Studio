@@ -5,14 +5,15 @@
   },
   "nav": {
     "brand": "CS2 STUDIO",
-    "version": "v0.0.1",
+    "version": "v0.0.3",
     "arena": "3D 压枪靶场",
     "buyBinds": "一键买枪",
     "viewmodel": "持枪视角",
     "autoexec": "导出 Autoexec",
     "supportBmc": "请我喝咖啡",
     "language": "语言",
-    "home": "控制台"
+    "home": "控制台",
+    "crosshair": "准星生成器"
   },
   "hero": {
     "badge": "100% 纯前端运行 • 无需登录 • 一键导出 Autoexec",
@@ -58,7 +59,17 @@
     "followRecoil": "准星跟随弹道",
     "sniperWidth": "狙击镜十字线宽度",
     "dropGlbHint": "将任意 CS2 .glb 武器模型拖放到 3D 场景中即可实时预览",
-    "modelStatus": "Source 2 高清武器模型"
+    "modelStatus": "Source 2 高清武器模型",
+    "splitDistance": "动态分离距离",
+    "innerSplitAlpha": "内侧分离透明度",
+    "outerSplitAlpha": "外侧分离透明度",
+    "splitSizeRatio": "分离尺寸比例",
+    "dynamicSpreadLimit": "动态扩散上限",
+    "testSpread": "模拟移动/开火扩散",
+    "copyConVars": "复制控制台指令",
+    "conVarsCopied": "准星指令已复制！",
+    "liveConVars": "实时 CS2 控制台参数",
+    "openArena3D": "在 Dust2 3D 靶场测试"
   },
   "buyBinds": {
     "title": "可视化买枪绑定工作室",
@@ -144,6 +155,8 @@
     "buyBindsTitle": "CS2 可视化一键买枪绑定工具 — CS2 Studio",
     "buyBindsDesc": "将武器与投掷物拖拽至机械键盘按键，秒级生成 CS2 买枪绑定指令。",
     "autoexecTitle": "CS2 Autoexec.cfg 生成与导出器 — CS2 Studio",
-    "autoexecDesc": "一键整合准星、视角、买枪绑定与 FPS 优化参数，立即下载纯净 autoexec.cfg。"
+    "autoexecDesc": "一键整合准星、视角、买枪绑定与 FPS 优化参数，立即下载纯净 autoexec.cfg。",
+    "crosshairTitle": "CS2 准星生成器、跟随后坐力与分享代码 — CS2 Studio",
+    "crosshairDesc": "自定义 CS2 cl_crosshair_recoil、动态扩散参数、描边粗细、狙击镜线宽，并支持 CS2 准星分享代码解析与生成。"
   }
 }

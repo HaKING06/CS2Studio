@@ -57,12 +57,20 @@ export function encodeCrosshairCode(ch) {
 export function generateCrosshairConVars(ch) {
   try {
     const struct = toCs2ShareStruct(ch);
-    const lines = crosshairToConVars(struct)
+    const rawLines = crosshairToConVars(struct)
       .trim()
       .split(/\r?\n/)
       .filter(Boolean);
-    lines.push(`cl_crosshair_sniper_width "${clamp(Number(ch.sniperWidth ?? 1), 1, 5)}"`);
-    return lines.join('\n');
+    const hasOutlineThickness = rawLines.some((l) => l.startsWith('cl_crosshair_outlinethickness'));
+    if (!hasOutlineThickness) {
+      const outlineThick =
+        Number(ch.outlineMode ?? 0) === 0
+          ? 0
+          : clamp(Number(ch.outlineThickness ?? 1), 0, 3);
+      rawLines.push(`cl_crosshair_outlinethickness "${outlineThick.toFixed(1)}"`);
+    }
+    rawLines.push(`cl_crosshair_sniper_width "${clamp(Number(ch.sniperWidth ?? 1), 1, 5)}"`);
+    return rawLines.join('\n');
   } catch {
     return '';
   }

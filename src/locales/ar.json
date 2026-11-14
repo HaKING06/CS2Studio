@@ -5,14 +5,15 @@
   },
   "nav": {
     "brand": "CS2 STUDIO",
-    "version": "v0.0.1",
+    "version": "v0.0.3",
     "arena": "ساحة الرش 3D",
     "buyBinds": "اختصارات الشراء",
     "viewmodel": "منظور السلاح",
     "autoexec": "تصدير Autoexec",
     "supportBmc": "ادعمني بقهوة",
     "language": "اللغة",
-    "home": "الرئيسية"
+    "home": "الرئيسية",
+    "crosshair": "المؤشر"
   },
   "hero": {
     "badge": "100% من طرف العميل • بدون تسجيل دخول • ملف Autoexec فوري",
@@ -58,7 +59,17 @@
     "followRecoil": "تتبع الارتداد",
     "sniperWidth": "سمك خط القناص",
     "dropGlbHint": "اسحب وأفلت أي ملف سلاح .glb خاص بـ CS2 داخل المشهد ثلاثي الأبعاد",
-    "modelStatus": "نموذج سلاح Source 2 عالي الدقة"
+    "modelStatus": "نموذج سلاح Source 2 عالي الدقة",
+    "splitDistance": "مسافة الانقسام",
+    "innerSplitAlpha": "شفافية الداخل",
+    "outerSplitAlpha": "شفافية الخارج",
+    "splitSizeRatio": "نسبة الانقسام",
+    "dynamicSpreadLimit": "حد الانتشار",
+    "testSpread": "محاكاة الحركة / الإطلاق",
+    "copyConVars": "نسخ الأوامر",
+    "conVarsCopied": "تم نسخ أوامر المؤشر!",
+    "liveConVars": "أوامر CS2 المباشرة",
+    "openArena3D": "اختبار في Dust2 3D"
   },
   "buyBinds": {
     "title": "الاستوديو المرئي لاختصارات الشراء",
@@ -144,6 +155,8 @@
     "buyBindsTitle": "صانع اختصارات الشراء المرئي لـ CS2 — CS2 Studio",
     "buyBindsDesc": "اسحب الأسلحة والقنابل إلى لوحة المفاتيح الميكانيكية لتوليد أوامر شراء CS2 فورًا.",
     "autoexecTitle": "مولد ومصدر ملف Autoexec.cfg لـ CS2 — CS2 Studio",
-    "autoexecDesc": "اجمع التصويب وViewmodel واختصارات الشراء وتحسينات FPS في ملف autoexec.cfg جاهز للتحميل."
+    "autoexecDesc": "اجمع التصويب وViewmodel واختصارات الشراء وتحسينات FPS في ملف autoexec.cfg جاهز للتحميل.",
+    "crosshairTitle": "مولد مؤشر CS2 وتتبع الارتداد وأكواد المشاركة — CS2 Studio",
+    "crosshairDesc": "خصص cl_crosshair_recoil والانتشار الديناميكي وسمك الحواف وعرض القناص مع استيراد وتصدير أكواد CS2."
   }
 }

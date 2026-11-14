@@ -11,7 +11,7 @@ import {
 
 interface Props {
   lang?: string;
-  pageKey?: 'home' | 'spray-arena' | 'viewmodel' | 'buy-binds' | 'autoexec';
+  pageKey?: 'home' | 'spray-arena' | 'crosshair' | 'viewmodel' | 'buy-binds' | 'autoexec';
   title?: string;
   description?: string;
   isPrefixed?: boolean;
@@ -44,6 +44,7 @@ const clientDict = {
     invalidCode: dict?.arena?.invalidCode || 'Invalid CSGO crosshair share code.',
     codeImported: dict?.arena?.codeImported || 'Crosshair share code imported!',
     codeCopied: dict?.arena?.codeCopied || 'Crosshair share code copied!',
+    conVarsCopied: dict?.arena?.conVarsCopied || 'Crosshair ConVars copied!',
   },
   buyBinds: {
     assigned: dict?.buyBinds?.assigned || 'Bound {{item}} to {{key}}',
@@ -64,6 +65,7 @@ const clientDict = {
 const navLinks = [
   { key: 'home' as const, label: t('nav.home'), href: getLocalizedPath(lang, 'home', isPrefixed) },
   { key: 'spray-arena' as const, label: t('nav.arena'), href: getLocalizedPath(lang, 'spray-arena', isPrefixed) },
+  { key: 'crosshair' as const, label: t('nav.crosshair'), href: getLocalizedPath(lang, 'crosshair', isPrefixed) },
   { key: 'viewmodel' as const, label: t('nav.viewmodel'), href: getLocalizedPath(lang, 'viewmodel', isPrefixed) },
   { key: 'buy-binds' as const, label: t('nav.buyBinds'), href: getLocalizedPath(lang, 'buy-binds', isPrefixed) },
   { key: 'autoexec' as const, label: t('nav.autoexec'), href: getLocalizedPath(lang, 'autoexec', isPrefixed) },
@@ -75,11 +77,11 @@ const jsonLd = {
   name: 'CS2 Studio',
   applicationCategory: 'GameApplication',
   operatingSystem: 'Web Browser',
-  softwareVersion: '0.0.1',
+  softwareVersion: '0.0.3',
   url: canonicalUrl,
   inLanguage: lang,
   description: pageDescription,
-  keywords: 'CS2 3D crosshair generator, CS2 spray test online, CS2 visual autoexec maker, pro CS2 crosshairs, CS2 buy binds, CS2 viewmodel simulator',
+  keywords: 'CS2 3D crosshair generator, CS2 spray test online, cl_crosshair_recoil, CS2 Dust2 arena, CS2 visual autoexec maker, pro CS2 crosshairs, CS2 buy binds, CS2 viewmodel simulator',
   offers: {
     '@type': 'Offer',
     price: '0',
@@ -105,7 +107,14 @@ const jsonLd = {
       name="keywords"
       content="CS2 3D crosshair generator, CS2 spray test online, CS2 visual autoexec maker, pro CS2 crosshairs, CS2 viewmodel FOV, CS2 buy binds generator"
     />
-    <meta name="theme-color" content="#070b14" />
+    <meta name="theme-color" content="#0b0f17" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&family=Oswald:wght@500;600;700&family=Teko:wght@500;600;700&display=swap"
+      rel="stylesheet"
+    />
 
     <link rel="icon" href="/assets/favicon.ico" sizes="any" />
     <link rel="apple-touch-icon" href="/assets/logo.png" />
@@ -139,9 +148,10 @@ const jsonLd = {
     </script>
   </head>
 
-  <body class="min-h-screen flex flex-col cs2-grid-bg selection:bg-cyan-500/30 selection:text-cyan-100">
+  <body class="min-h-screen flex flex-col cs2-grid-bg cs2-noise selection:bg-amber-500/30 selection:text-amber-200">
     <!-- Top Tactical Navbar -->
-    <header class="sticky top-0 z-40 border-b border-slate-800/80 bg-slate-950/85 backdrop-blur-xl">
+    <header class="sticky top-0 z-40 border-b border-slate-800/90 bg-[#0b0f17]/92 backdrop-blur-xl shadow-[0_8px_30px_rgba(0,0,0,0.45)]">
+      <div class="h-0.5 w-full bg-gradient-to-r from-amber-500 via-orange-500 to-transparent opacity-80"></div>
       <div class="max-w-[1440px] mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
         <!-- Brand Logo (Raster PNG, Zero SVG) -->
         <a href={getLocalizedPath(lang, 'home', isPrefixed)} class="flex items-center gap-3 shrink-0 group">
@@ -150,12 +160,12 @@ const jsonLd = {
             alt="CS2 Studio Logo"
             width="40"
             height="40"
-            class="w-10 h-10 object-contain drop-shadow-[0_0_12px_rgba(34,211,238,0.45)] transition-transform group-hover:scale-105"
+            class="w-10 h-10 object-contain drop-shadow-[0_0_12px_rgba(255,157,0,0.45)] transition-transform group-hover:scale-105"
           />
           <div>
             <div class="flex items-center gap-2">
-              <span class="font-black tracking-wider text-white text-base sm:text-lg">{t('nav.brand')}</span>
-              <span class="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-cyan-500/15 text-cyan-300 border border-cyan-500/30">
+              <span class="font-display font-bold uppercase tracking-wider text-white text-2xl leading-none">{t('nav.brand')}</span>
+              <span class="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-sm bg-[#ff9d00]/15 text-[#ff9d00] border border-[#ff9d00]/40">
                 {t('nav.version')}
               </span>
             </div>
@@ -164,16 +174,16 @@ const jsonLd = {
         </a>
 
         <!-- Multi-Page Navigation Links -->
-        <nav aria-label="Main Navigation" class="hidden lg:flex items-center gap-1.5 text-sm font-medium">
+        <nav aria-label="Main Navigation" class="hidden lg:flex items-center gap-1 text-xs font-bold uppercase tracking-wider">
           {navLinks.map((item) => {
             const active = item.key === pageKey;
             return (
               <a
                 href={item.href}
-                class={`px-3 py-1.5 rounded-lg transition-all ${
+                class={`px-3.5 py-2 rounded-sm transition-all border-b-2 ${
                   active
-                    ? 'bg-cyan-500/15 text-cyan-300 border border-cyan-400/40 shadow-[0_0_12px_rgba(34,211,238,0.12)]'
-                    : 'text-slate-300 hover:text-white hover:bg-slate-800/70 border border-transparent'
+                    ? 'bg-[#ff9d00]/12 text-[#ff9d00] border-[#ff9d00] shadow-[inset_0_-12px_20px_-14px_rgba(255,157,0,0.5)]'
+                    : 'text-slate-300 hover:text-white hover:bg-slate-800/70 border-transparent hover:border-slate-600'
                 }`}
               >
                 {item.label}
@@ -190,7 +200,7 @@ const jsonLd = {
             href="https://www.buymeacoffee.com/haking"
             target="_blank"
             rel="noopener noreferrer"
-            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-semibold text-xs bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 shadow-[0_0_18px_rgba(245,158,11,0.3)] transition-all hover:scale-[1.02]"
+            class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-sm cs2-chamfer font-bold text-xs uppercase tracking-wider bg-[#ff9d00] hover:bg-amber-400 text-[#0b0f17] shadow-[0_0_20px_rgba(255,157,0,0.3)] transition-all hover:scale-[1.02]"
           >
             <span aria-hidden="true">☕</span>
             <span class="hidden sm:inline">{t('nav.supportBmc')}</span>
@@ -199,16 +209,16 @@ const jsonLd = {
       </div>
 
       <!-- Mobile Horizontal Nav -->
-      <nav aria-label="Mobile Navigation" class="lg:hidden border-t border-slate-800/70 px-4 py-2 flex items-center gap-1.5 overflow-x-auto text-xs font-medium">
+      <nav aria-label="Mobile Navigation" class="lg:hidden border-t border-slate-800/70 px-4 py-2 flex items-center gap-1.5 overflow-x-auto text-[11px] font-bold uppercase tracking-wider">
         {navLinks.map((item) => {
           const active = item.key === pageKey;
           return (
             <a
               href={item.href}
-              class={`px-2.5 py-1 rounded-md shrink-0 transition-colors ${
+              class={`px-2.5 py-1 rounded-sm shrink-0 transition-colors border ${
                 active
-                  ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-400/40'
-                  : 'text-slate-300 hover:text-white bg-slate-900/70 border border-slate-800'
+                  ? 'bg-[#ff9d00]/15 text-[#ff9d00] border-[#ff9d00]/50'
+                  : 'text-slate-300 hover:text-white bg-slate-900/80 border-slate-800'
               }`}
             >
               {item.label}
@@ -219,23 +229,23 @@ const jsonLd = {
     </header>
 
     <!-- Page Main Content -->
-    <main class="flex-1 max-w-[1440px] w-full mx-auto px-4 sm:px-6 py-8 sm:py-10">
+    <main class="flex-1 max-w-[1440px] w-full mx-auto px-4 sm:px-6 py-7 sm:py-9">
       <slot />
     </main>
 
     <!-- Footer -->
-    <footer class="border-t border-slate-800/80 bg-slate-950/90 mt-12">
+    <footer class="border-t border-slate-800/90 bg-[#080b11] mt-12">
       <div class="max-w-[1440px] mx-auto px-4 sm:px-6 py-8 flex flex-col md:flex-row items-center justify-between gap-6">
         <div class="flex items-center gap-3">
           <img src="/assets/logo.png" alt="CS2 Studio" width="32" height="32" class="w-8 h-8 object-contain" />
           <div>
-            <div class="text-sm font-bold text-white">CS2 Studio v0.0.1</div>
-            <p class="text-xs text-slate-400">{t('footer.madeFor')}</p>
+            <div class="font-display text-lg uppercase tracking-wider font-bold text-white leading-none">CS2 Studio v0.0.3</div>
+            <p class="text-xs text-slate-400 mt-0.5">{t('footer.madeFor')}</p>
           </div>
         </div>
 
         <div class="flex flex-wrap items-center justify-center gap-4 text-xs text-slate-400">
-          <a href={`mailto:cs2studio@haking.tr`} class="hover:text-cyan-300 transition-colors font-mono">
+          <a href={`mailto:cs2studio@haking.tr`} class="hover:text-[#ff9d00] transition-colors font-mono">
             {t('footer.contact')}: cs2studio@haking.tr
           </a>
           <span class="text-slate-700">|</span>
@@ -243,7 +253,7 @@ const jsonLd = {
             href="https://www.buymeacoffee.com/haking"
             target="_blank"
             rel="noopener noreferrer"
-            class="inline-flex items-center gap-1.5 text-amber-400 hover:text-amber-300 font-semibold"
+            class="inline-flex items-center gap-1.5 text-[#ff9d00] hover:text-amber-300 font-semibold"
           >
             <span>☕</span>
             <span>buymeacoffee.com/haking</span>
@@ -257,7 +267,7 @@ const jsonLd = {
           {SUPPORTED_LANGUAGES.map((l) => (
             <a
               href={getLocalizedPath(l.code, pageKey, true)}
-              class={`hover:text-cyan-300 transition-colors ${l.code === lang ? 'text-cyan-400 font-semibold' : ''}`}
+              class={`hover:text-[#ff9d00] transition-colors ${l.code === lang ? 'text-[#ff9d00] font-semibold' : ''}`}
             >
               {l.flag} {l.nativeName}
             </a>

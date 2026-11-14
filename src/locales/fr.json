@@ -5,14 +5,15 @@
   },
   "nav": {
     "brand": "CS2 STUDIO",
-    "version": "v0.0.1",
+    "version": "v0.0.3",
     "arena": "Arène 3D Spray",
     "buyBinds": "Binds d'Achat",
     "viewmodel": "Viewmodel",
     "autoexec": "Export Autoexec",
     "supportBmc": "M'offrir un Café",
     "language": "Langue",
-    "home": "Tableau de bord"
+    "home": "Tableau de bord",
+    "crosshair": "Viseur"
   },
   "hero": {
     "badge": "100% Côté Client • Sans Connexion • Autoexec Instantané",
@@ -58,7 +59,17 @@
     "followRecoil": "Suivre le Recul",
     "sniperWidth": "Épaisseur Viseur Sniper",
     "dropGlbHint": "Glissez un fichier .glb d'arme CS2 sur la scène 3D pour l'aperçu",
-    "modelStatus": "Modèle HD Source 2"
+    "modelStatus": "Modèle HD Source 2",
+    "splitDistance": "Distance de division",
+    "innerSplitAlpha": "Alpha interne",
+    "outerSplitAlpha": "Alpha externe",
+    "splitSizeRatio": "Ratio de taille",
+    "dynamicSpreadLimit": "Limite de dispersion",
+    "testSpread": "Simuler Tir / Mouvement",
+    "copyConVars": "Copier les ConVars",
+    "conVarsCopied": "Commandes ConVars copiées !",
+    "liveConVars": "ConVars CS2 en Direct",
+    "openArena3D": "Tester dans Dust2 3D"
   },
   "buyBinds": {
     "title": "Studio Visuel de Binds d'Achat",
@@ -144,6 +155,8 @@
     "buyBindsTitle": "Créateur visuel de Buy Binds CS2 — CS2 Studio",
     "buyBindsDesc": "Glissez armes et grenades sur le clavier mécanique interactif pour générer vos binds d'achat CS2.",
     "autoexecTitle": "Générateur Autoexec.cfg CS2 — CS2 Studio",
-    "autoexecDesc": "Compilez viseur, viewmodel, binds et optimisations FPS dans un fichier autoexec.cfg propre."
+    "autoexecDesc": "Compilez viseur, viewmodel, binds et optimisations FPS dans un fichier autoexec.cfg propre.",
+    "crosshairTitle": "Générateur de Viseur CS2, Follow Recoil & Share Codes — CS2 Studio",
+    "crosshairDesc": "Personnalisez cl_crosshair_recoil, dispersion dynamique, épaisseur du contour, largeur sniper et codes de partage CS2."
   }
 }

@@ -13,10 +13,10 @@ export function notify(icon, title) {
     showConfirmButton: false,
     timer: 2300,
     timerProgressBar: true,
-    background: '#0f172a',
+    background: '#0b0f17',
     color: '#f8fafc',
     customClass: {
-      popup: 'border border-cyan-500/40 shadow-[0_0_25px_rgba(34,211,238,0.2)] rounded-xl text-sm',
+      popup: 'border border-[#ff9d00]/60 shadow-[0_0_25px_rgba(255,157,0,0.2)] rounded-sm text-sm',
     },
     icon,
     title,
@@ -30,17 +30,17 @@ export function attachGlbDropHandler(dropZoneEl, onLoaded) {
     const hasFiles = e.dataTransfer?.types && Array.from(e.dataTransfer.types).includes('Files');
     if (hasFiles) {
       e.preventDefault();
-      dropZoneEl.classList.add('ring-2', 'ring-cyan-400');
+      dropZoneEl.classList.add('ring-2', 'ring-[#ff9d00]');
     }
   });
 
   dropZoneEl.addEventListener('dragleave', () => {
-    dropZoneEl.classList.remove('ring-2', 'ring-cyan-400');
+    dropZoneEl.classList.remove('ring-2', 'ring-[#ff9d00]');
   });
 
   dropZoneEl.addEventListener('drop', async (e) => {
     const file = e.dataTransfer?.files?.[0];
-    dropZoneEl.classList.remove('ring-2', 'ring-cyan-400');
+    dropZoneEl.classList.remove('ring-2', 'ring-[#ff9d00]');
     if (!file) return;
     if (!file.name.toLowerCase().endsWith('.glb')) return;
     e.preventDefault();

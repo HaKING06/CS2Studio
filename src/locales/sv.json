@@ -5,14 +5,15 @@
   },
   "nav": {
     "brand": "CS2 STUDIO",
-    "version": "v0.0.1",
+    "version": "v0.0.3",
     "arena": "3D Sprayarena",
     "buyBinds": "Köp-binds",
     "viewmodel": "Viewmodel",
     "autoexec": "Exportera Autoexec",
     "supportBmc": "Bjud på en Kaffe",
     "language": "Språk",
-    "home": "Översikt"
+    "home": "Översikt",
+    "crosshair": "Sikte"
   },
   "hero": {
     "badge": "100% Klientside • Ingen Inloggning • Direkt Autoexec",
@@ -58,7 +59,17 @@
     "followRecoil": "Följ Rekyl",
     "sniperWidth": "Bredd på Prickskyttesikte",
     "dropGlbHint": "Dra och släpp valfri CS2 .glb-fil på 3D-scenen för förhandsvisning",
-    "modelStatus": "Source 2 HD-vapenmodell"
+    "modelStatus": "Source 2 HD-vapenmodell",
+    "splitDistance": "Delningsavstånd",
+    "innerSplitAlpha": "Inre Alpha",
+    "outerSplitAlpha": "Yttre Alpha",
+    "splitSizeRatio": "Storleksförhållande",
+    "dynamicSpreadLimit": "Spridningsgräns",
+    "testSpread": "Simulera Skott / Rörelse",
+    "copyConVars": "Kopiera ConVars",
+    "conVarsCopied": "ConVars kopierade!",
+    "liveConVars": "Live CS2 ConVars",
+    "openArena3D": "Testa i 3D Dust2"
   },
   "buyBinds": {
     "title": "Visuell Studio för Köp-binds",
@@ -144,6 +155,8 @@
     "buyBindsTitle": "CS2 Visuell Buy Binds-skapare — CS2 Studio",
     "buyBindsDesc": "Dra vapen och granater till mekaniska tangenter för färdiga CS2-köpkommandon.",
     "autoexecTitle": "CS2 Autoexec.cfg Generator & Export — CS2 Studio",
-    "autoexecDesc": "Samla sikte, viewmodel, buy binds och FPS-optimeringar i en ren autoexec.cfg."
+    "autoexecDesc": "Samla sikte, viewmodel, buy binds och FPS-optimeringar i en ren autoexec.cfg.",
+    "crosshairTitle": "CS2 Siktegenerator, Follow Recoil & Share Codes — CS2 Studio",
+    "crosshairDesc": "Anpassa cl_crosshair_recoil, dynamisk spridning, konturtjocklek, sniperbredd och CS2 sikteskoder."
   }
 }

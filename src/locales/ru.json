@@ -5,14 +5,15 @@
   },
   "nav": {
     "brand": "CS2 STUDIO",
-    "version": "v0.0.1",
+    "version": "v0.0.3",
     "arena": "3D Арена спрея",
     "buyBinds": "Бинды закупки",
     "viewmodel": "Viewmodel",
     "autoexec": "Экспорт Autoexec",
     "supportBmc": "Угостить кофе",
     "language": "Язык",
-    "home": "Главная"
+    "home": "Главная",
+    "crosshair": "Прицел"
   },
   "hero": {
     "badge": "100% на стороне клиента • Без входа • Мгновенный Autoexec",
@@ -58,7 +59,17 @@
     "followRecoil": "Следовать за отдачей",
     "sniperWidth": "Толщина линий снайперки",
     "dropGlbHint": "Перетащите .glb модель оружия CS2 на 3D сцену для просмотра",
-    "modelStatus": "HD модель оружия Source 2"
+    "modelStatus": "HD модель оружия Source 2",
+    "splitDistance": "Дистанция разрыва",
+    "innerSplitAlpha": "Прозрачность внутри",
+    "outerSplitAlpha": "Прозрачность снаружи",
+    "splitSizeRatio": "Соотношение деления",
+    "dynamicSpreadLimit": "Лимит разброса",
+    "testSpread": "Тест стрельбы / движения",
+    "copyConVars": "Копировать ConVars",
+    "conVarsCopied": "Консольные команды прицела скопированы!",
+    "liveConVars": "Команды CS2 в реальном времени",
+    "openArena3D": "Тест на Dust2 3D"
   },
   "buyBinds": {
     "title": "Визуальная студия биндов закупки",
@@ -144,6 +155,8 @@
     "buyBindsTitle": "CS2 Визуальный конструктор Buy Binds — CS2 Studio",
     "buyBindsDesc": "Перетаскивайте оружие и гранаты на интерактивную механическую клавиатуру для создания биндов покупки CS2.",
     "autoexecTitle": "CS2 Генератор Autoexec.cfg онлайн — CS2 Studio",
-    "autoexecDesc": "Соберите прицел, viewmodel, buy-бинды и настройки FPS в чистый файл autoexec.cfg в один клик."
+    "autoexecDesc": "Соберите прицел, viewmodel, buy-бинды и настройки FPS в чистый файл autoexec.cfg в один клик.",
+    "crosshairTitle": "Генератор прицела CS2, Follow Recoil и Share-коды — CS2 Studio",
+    "crosshairDesc": "Настройка cl_crosshair_recoil, динамического разброса, толщины контура, прицела AWP и импорт/экспорт кодов прицела CS2."
   }
 }

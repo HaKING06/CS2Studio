@@ -134,13 +134,12 @@ export function mountBuyBindsPage() {
     paletteEl.innerHTML = items.map((item) => {
       const isSelected = selectedPaletteItemId === item.id;
       return `<div data-buy-item="${item.id}" draggable="true"
-        class="buy-palette-item select-none flex items-center justify-between gap-2 px-3 py-2 rounded-xl border transition-all cursor-grab active:cursor-grabbing ${
           isSelected
-            ? 'bg-cyan-500/15 border-cyan-400/70 shadow-[0_0_15px_rgba(34,211,238,0.14)]'
-            : 'bg-slate-900/75 border-slate-700/60 hover:border-cyan-400/40 hover:bg-slate-800/80'
-        }">
-        <div class="flex items-center gap-2.5 min-w-0">
-          <div class="w-11 h-7 rounded bg-slate-950/90 border border-slate-800 flex items-center justify-center p-1 shrink-0">
+          ? 'bg-[#ff9d00]/15 border-[#ff9d00] shadow-[0_0_15px_rgba(255,157,0,0.16)]'
+          : 'bg-[#0b0f17] border-slate-800 hover:border-[#ff9d00]/50 hover:bg-slate-900'
+    }">
+    < div class= "flex items-center gap-2.5 min-w-0" >
+          <div class="w-11 h-7 rounded-sm bg-[#080b11] border border-slate-800 flex items-center justify-center p-1 shrink-0">
             <img src="${item.icon}" alt="${item.name}" class="max-w-full max-h-full object-contain pointer-events-none brightness-0 invert opacity-90" loading="lazy" />
           </div>
           <div class="min-w-0">
@@ -148,15 +147,15 @@ export function mountBuyBindsPage() {
             <div class="text-[10px] font-mono text-slate-400">buy ${item.id}</div>
           </div>
         </div>
-        <span class="text-[11px] font-mono font-bold text-amber-400 shrink-0">$${item.price}</span>
-      </div>`;
+        <span class="text-[11px] font-mono font-bold text-[#ff9d00] shrink-0">$${item.price}</span>
+      </div > `;
     }).join('');
 
     catTabs.forEach((tab) => {
       const active = tab.dataset.buyCat === activeCategory;
-      tab.classList.toggle('bg-cyan-500/20', active);
-      tab.classList.toggle('border-cyan-400', active);
-      tab.classList.toggle('text-cyan-200', active);
+      tab.classList.toggle('bg-[#ff9d00]/20', active);
+      tab.classList.toggle('border-[#ff9d00]', active);
+      tab.classList.toggle('text-[#ff9d00]', active);
       tab.classList.toggle('border-slate-700', !active);
       tab.classList.toggle('text-slate-400', !active);
     });
@@ -171,7 +170,7 @@ export function mountBuyBindsPage() {
   }
 
   function buildKeyHtml(keyDef) {
-    if (!keyDef.code) return `<div class="pointer-events-none"></div>`;
+    if (!keyDef.code) return `< div class= "pointer-events-none" ></div > `;
     const assignedIds = state.buyBinds[keyDef.code] || [];
     const primary = assignedIds[0] ? ITEM_MAP[assignedIds[0]] : null;
     const hasBind = assignedIds.length > 0;
@@ -181,34 +180,33 @@ export function mountBuyBindsPage() {
     ].filter(Boolean).join(' ');
 
     if (keyDef.locked) {
-      return `<div class="mech-keycap flex flex-col items-center justify-center rounded-xl border border-slate-800 bg-slate-950/80 text-slate-600 text-[10px] font-mono select-none p-1.5 min-h-[58px] ${spanClasses}">
+      return `<div class="mech-keycap flex flex-col items-center justify-center rounded-sm border border-slate-800 bg-[#080b11] text-slate-600 text-[10px] font-mono select-none p-1.5 min-h-[58px] ${spanClasses}">
         <span>${keyDef.label}</span>
       </div>`;
-    }
+  }
 
-    const titleText = hasBind
-      ? `${keyDef.code.toUpperCase()}: ${assignedIds.map((id) => ITEM_MAP[id]?.name || id).join(' + ')}`
-      : keyDef.code.toUpperCase();
+  const titleText = hasBind
+    ? `${keyDef.code.toUpperCase()}: ${assignedIds.map((id) => ITEM_MAP[id]?.name || id).join(' + ')}`
+    : keyDef.code.toUpperCase();
 
-    return `<div data-key-code="${keyDef.code}" title="${titleText}"
-      class="mech-keycap group relative flex flex-col justify-between rounded-xl border p-1.5 min-h-[58px] transition-all cursor-pointer select-none ${spanClasses} ${
+  return `<div data-key-code="${keyDef.code}" title="${titleText}"
         hasBind
-          ? 'bg-gradient-to-b from-slate-800/95 to-slate-900/95 border-cyan-400/70 shadow-[0_4px_0_0_rgba(8,145,178,0.5),0_0_16px_rgba(34,211,238,0.16)]'
-          : 'bg-gradient-to-b from-slate-900/95 to-slate-950/95 border-slate-700/80 shadow-[0_4px_0_0_rgba(15,23,42,0.95)] hover:border-amber-400/60'
-      }">
-      <div class="flex items-center justify-between gap-1 w-full">
-        <span class="text-[10px] font-mono font-bold ${hasBind ? 'text-cyan-300' : 'text-slate-400'}">${keyDef.label}</span>
-        ${assignedIds.length > 1 ? `<span class="text-[9px] font-mono px-1 rounded bg-amber-500/20 text-amber-300 border border-amber-400/40">+${assignedIds.length - 1}</span>` : ''}
-      </div>
+      ? 'bg-gradient-to-b from-slate-800/95 to-slate-900/95 border-[#ff9d00] shadow-[0_4px_0_0_rgba(234,88,12,0.55),0_0_16px_rgba(255,157,0,0.18)]'
+      : 'bg-gradient-to-b from-slate-900/95 to-[#080b11] border-slate-700/80 shadow-[0_4px_0_0_rgba(8,11,17,0.95)] hover:border-[#ff9d00]/60'
+} ">
+  < div class="flex items-center justify-between gap-1 w-full" >
+<span class="text-[10px] font-mono font-bold ${hasBind ? 'text-[#ff9d00]' : 'text-slate-400'}">${keyDef.label}</span>
+        ${ assignedIds.length > 1 ? `<span class="text-[9px] font-mono px-1 rounded-sm bg-[#ff9d00]/20 text-[#ff9d00] border border-[#ff9d00]/40">+${assignedIds.length - 1}</span>` : '' }
+      </div >
       <div class="flex-1 flex items-center justify-center my-0.5 overflow-hidden">
         ${primary
-          ? `<img src="${primary.icon}" alt="${primary.name}" class="max-h-5 max-w-[90%] object-contain brightness-0 invert drop-shadow-[0_0_6px_rgba(34,211,238,0.55)] pointer-events-none" />`
+          ? `<img src="${primary.icon}" alt="${primary.name}" class="max-h-5 max-w-[90%] object-contain brightness-0 invert drop-shadow-[0_0_6px_rgba(255,157,0,0.55)] pointer-events-none" />`
           : `<span class="text-[9px] text-slate-600 font-mono opacity-60 group-hover:opacity-100">+</span>`}
       </div>
       <div class="text-[9px] font-mono truncate text-center ${hasBind ? 'text-slate-200 font-semibold' : 'text-slate-600'}">
         ${primary ? primary.short : keyDef.code}
       </div>
-    </div>`;
+    </div > `;
   }
 
   function renderKeyboard() {

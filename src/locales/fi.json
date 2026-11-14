@@ -5,14 +5,15 @@
   },
   "nav": {
     "brand": "CS2 STUDIO",
-    "version": "v0.0.1",
+    "version": "v0.0.3",
     "arena": "3D Spray-areena",
     "buyBinds": "Ostobindit",
     "viewmodel": "Viewmodel",
     "autoexec": "Vie Autoexec",
     "supportBmc": "Tarjoa Kahvit",
     "language": "Kieli",
-    "home": "Kojelauta"
+    "home": "Kojelauta",
+    "crosshair": "Tähtäin"
   },
   "hero": {
     "badge": "100% Selainpohjainen • Ei Kirjautumista • Välitön Autoexec",
@@ -58,7 +59,17 @@
     "followRecoil": "Seuraa Rekyyliä",
     "sniperWidth": "Tarkkuuskiväärin Tähtäinleveys",
     "dropGlbHint": "Vedä ja pudota mikä tahansa CS2 .glb-tiedosto 3D-näkymään",
-    "modelStatus": "Source 2 HD-asemalli"
+    "modelStatus": "Source 2 HD-asemalli",
+    "splitDistance": "Jakoväli",
+    "innerSplitAlpha": "Sisäinen Alpha",
+    "outerSplitAlpha": "Ulkoinen Alpha",
+    "splitSizeRatio": "Jakosuhde",
+    "dynamicSpreadLimit": "Leviämisraja",
+    "testSpread": "Simuloi Liike / Laukaus",
+    "copyConVars": "Kopioi ConVars",
+    "conVarsCopied": "ConVars kopioitu!",
+    "liveConVars": "Live CS2 ConVars",
+    "openArena3D": "Testaa 3D Dust2:ssa"
   },
   "buyBinds": {
     "title": "Visuaalinen Ostobindistudio",
@@ -144,6 +155,8 @@
     "buyBindsTitle": "CS2 Visuaalinen Buy Binds -rakentaja — CS2 Studio",
     "buyBindsDesc": "Vedä aseet ja kranaatit mekaaniselle näppäimistölle ja luo CS2-ostobindit hetkessä.",
     "autoexecTitle": "CS2 Autoexec.cfg-generaattori — CS2 Studio",
-    "autoexecDesc": "Yhdistä tähtäin, viewmodel, ostobindit ja FPS-asetukset siistiksi autoexec.cfg-tiedostoksi."
+    "autoexecDesc": "Yhdistä tähtäin, viewmodel, ostobindit ja FPS-asetukset siistiksi autoexec.cfg-tiedostoksi.",
+    "crosshairTitle": "CS2 Tähtäingeneraattori, Follow Recoil & Share Codes — CS2 Studio",
+    "crosshairDesc": "Mukauta cl_crosshair_recoil, dynaamiset leviämisasetukset, ääriviivan paksuus, kiikaritähtäin ja CS2-koodit."
   }
 }

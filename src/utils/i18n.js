@@ -26,6 +26,7 @@ export const LANGUAGE_CODES = SUPPORTED_LANGUAGES.map((l) => l.code);
 export const PAGE_SLUGS = {
   home: '',
   'spray-arena': 'spray-arena',
+  crosshair: 'crosshair',
   viewmodel: 'viewmodel',
   'buy-binds': 'buy-binds',
   autoexec: 'autoexec',

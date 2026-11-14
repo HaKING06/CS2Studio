@@ -1,0 +1,255 @@
+---
+import { getDictionary, getLocalizedPath, translateKey } from '../utils/i18n.js';
+
+interface Props {
+  lang: string;
+}
+
+const { lang } = Astro.props;
+const dict = getDictionary(lang);
+const t = (key: string) => translateKey(dict, key);
+---
+
+<section id="crosshair-section" class="space-y-6">
+  <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-slate-800/80 pb-4">
+    <div>
+      <span class="text-[11px] font-mono uppercase tracking-[0.2em] text-[#ff9d00] font-semibold">cl_crosshair_recoil • CS2 Share Codes</span>
+      <h1 class="font-display text-3xl sm:text-5xl font-bold uppercase text-white tracking-wide mt-0.5 leading-none">{t('arena.crosshairEditor')}</h1>
+      <p class="text-sm text-slate-400 mt-1.5">{t('pages.crosshairDesc')}</p>
+    </div>
+
+    <div class="flex flex-wrap items-center gap-2">
+      <a
+        href={getLocalizedPath(lang, 'spray-arena', true)}
+        class="inline-flex items-center gap-2 px-4 py-2 rounded-sm cs2-chamfer bg-[#ff9d00] hover:bg-amber-400 text-[#0b0f17] font-bold text-xs uppercase tracking-wider shadow-[0_0_20px_rgba(255,157,0,0.3)] transition-all"
+      >
+        <span>{t('arena.openArena3D')}</span>
+        <span aria-hidden="true">→</span>
+      </a>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
+    <!-- Left Column: High-DPI Preview + Pro Database + Live ConVars -->
+    <div class="xl:col-span-7 space-y-5">
+      <div class="cs2-panel rounded-sm p-4 space-y-3 border-t-2 border-t-[#ff9d00]">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div class="flex flex-wrap items-center gap-1.5 text-xs">
+            <button type="button" data-ch-bg="dust2" class="px-2.5 py-1 rounded-sm border font-mono cursor-pointer transition-colors">Dust2 Sand</button>
+            <button type="button" data-ch-bg="mirage" class="px-2.5 py-1 rounded-sm border font-mono cursor-pointer transition-colors">Mirage Brick</button>
+            <button type="button" data-ch-bg="dark" class="px-2.5 py-1 rounded-sm border font-mono cursor-pointer transition-colors">Dark Smoke</button>
+            <button type="button" data-ch-bg="sky" class="px-2.5 py-1 rounded-sm border font-mono cursor-pointer transition-colors">Bright Sky</button>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-3 text-xs">
+            <label class="inline-flex items-center gap-1.5 text-slate-300 cursor-pointer">
+              <input id="ch-test-spread" type="checkbox" class="accent-[#ff9d00] cursor-pointer" />
+              <span>{t('arena.testSpread')}</span>
+            </label>
+            <label class="inline-flex items-center gap-1.5 text-slate-300 cursor-pointer">
+              <input id="ch-scope-preview" type="checkbox" class="accent-[#ff9d00] cursor-pointer" />
+              <span>AWP Scope</span>
+            </label>
+          </div>
+        </div>
+
+        <div
+          id="ch-preview-stage"
+          class="relative w-full aspect-[16/9] min-h-[280px] rounded-sm overflow-hidden border border-slate-700/80 bg-[#080b11]"
+        >
+          <canvas id="ch-preview-bg" class="w-full h-full block"></canvas>
+          <canvas id="ch-preview-hud" class="absolute inset-0 w-full h-full pointer-events-none"></canvas>
+        </div>
+      </div>
+
+      <!-- Pro Crosshair Database & Share Code -->
+      <div class="cs2-panel rounded-sm p-5 space-y-3">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <h2 class="font-display text-xl uppercase tracking-wider font-bold text-white">{t('arena.proDatabase')}</h2>
+          <div class="flex items-center gap-2 w-full sm:w-auto">
+            <input
+              id="crosshair-share-code"
+              dir="ltr"
+              type="text"
+              placeholder="CS... / CSGO-..."
+              aria-label={t('arena.shareCode')}
+              class="flex-1 sm:w-72 bg-[#080b11] border border-slate-700 rounded-sm px-2.5 py-1.5 text-xs font-mono text-[#ff9d00] focus:border-[#ff9d00] focus:outline-none"
+            />
+            <button id="btn-import-crosshair" type="button" class="px-2.5 py-1.5 rounded-sm bg-[#ff9d00]/15 hover:bg-[#ff9d00]/25 border border-[#ff9d00]/60 text-[#ff9d00] text-xs font-bold uppercase cursor-pointer">
+              {t('arena.importCode')}
+            </button>
+            <button id="btn-copy-crosshair" type="button" class="px-2.5 py-1.5 rounded-sm bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 text-xs font-bold uppercase cursor-pointer">
+              {t('arena.copyCode')}
+            </button>
+          </div>
+        </div>
+        <div id="pro-crosshair-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5"></div>
+      </div>
+
+      <!-- Live CS2 ConVars Output -->
+      <div class="cs2-panel rounded-sm p-5 space-y-3">
+        <div class="flex items-center justify-between">
+          <h2 class="font-display text-lg uppercase tracking-wider font-bold text-white">{t('arena.liveConVars')}</h2>
+          <button id="btn-copy-convars" type="button" class="px-3 py-1 rounded-sm bg-[#ff9d00]/15 hover:bg-[#ff9d00]/25 border border-[#ff9d00]/50 text-[#ff9d00] text-xs font-bold uppercase cursor-pointer">
+            {t('arena.copyConVars')}
+          </button>
+        </div>
+        <pre id="ch-convars-output" dir="ltr" class="bg-[#080b11] border border-slate-800 rounded-sm p-3.5 font-mono text-xs text-amber-300 leading-relaxed whitespace-pre-wrap text-left"></pre>
+      </div>
+    </div>
+
+    <!-- Right Column: Full CS2 Crosshair Parameter Rack -->
+    <div class="xl:col-span-5 cs2-panel rounded-sm p-5 space-y-4 border-t-2 border-t-[#ff9d00]">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <span class="font-display text-xl uppercase tracking-wider font-bold text-white">CS2 Engine Parameters</span>
+        <button id="btn-ch-reset" type="button" class="px-2.5 py-1 rounded-sm bg-slate-800 hover:bg-slate-700 border border-slate-600 text-xs font-semibold text-slate-200 cursor-pointer">
+          {t('common.reset')}
+        </button>
+      </div>
+
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label for="ch-style" class="block text-xs text-slate-400 mb-1">{t('arena.style')}</label>
+          <select id="ch-style" class="w-full bg-[#0b0f17] border border-slate-700 rounded-sm px-2.5 py-1.5 text-xs text-white focus:border-[#ff9d00] focus:outline-none">
+            <option value="4">{t('arena.styleStatic')}</option>
+            <option value="2">{t('arena.styleDynamic')}</option>
+            <option value="0">{t('arena.styleHybrid')}</option>
+            <option value="5">Shot Feedback (5)</option>
+            <option value="6">Dot Only (6)</option>
+          </select>
+        </div>
+        <div>
+          <label for="ch-outline" class="block text-xs text-slate-400 mb-1">{t('arena.outline')}</label>
+          <select id="ch-outline" class="w-full bg-[#0b0f17] border border-slate-700 rounded-sm px-2.5 py-1.5 text-xs text-white focus:border-[#ff9d00] focus:outline-none">
+            <option value="0">Off</option>
+            <option value="1">Full Outline</option>
+            <option value="2">Half Outline</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3">
+        <div>
+          <div class="flex justify-between text-xs mb-1">
+            <span class="text-slate-300">{t('arena.size')}</span>
+            <span id="val-ch-length" class="font-mono text-[#ff9d00]">2</span>
+          </div>
+          <input id="ch-length" type="range" min="0" max="20" step="1" class="w-full cs2-slider" />
+        </div>
+
+        <div>
+          <div class="flex justify-between text-xs mb-1">
+            <span class="text-slate-300">{t('arena.thickness')}</span>
+            <span id="val-ch-thickness" class="font-mono text-[#ff9d00]">2</span>
+          </div>
+          <input id="ch-thickness" type="range" min="1" max="10" step="1" class="w-full cs2-slider" />
+        </div>
+
+        <div>
+          <div class="flex justify-between text-xs mb-1">
+            <span class="text-slate-300">{t('arena.gap')}</span>
+            <span id="val-ch-gap" class="font-mono text-[#ff9d00]">1</span>
+          </div>
+          <input id="ch-gap" type="range" min="-8" max="15" step="1" class="w-full cs2-slider" />
+        </div>
+
+        <div>
+          <div class="flex justify-between text-xs mb-1">
+            <span class="text-slate-300">{t('arena.outlineThickness')}</span>
+            <span id="val-ch-outline-thickness" class="font-mono text-[#ff9d00]">1.0</span>
+          </div>
+          <input id="ch-outline-thickness" type="range" min="0" max="3" step="0.5" class="w-full cs2-slider" />
+        </div>
+
+        <div>
+          <div class="flex justify-between text-xs mb-1">
+            <span class="text-slate-300">{t('arena.alpha')}</span>
+            <span id="val-ch-alpha" class="font-mono text-[#ff9d00]">255</span>
+          </div>
+          <input id="ch-alpha" type="range" min="50" max="255" step="5" class="w-full cs2-slider" />
+        </div>
+
+        <div>
+          <div class="flex justify-between text-xs mb-1">
+            <span class="text-slate-300">{t('arena.sniperWidth')}</span>
+            <span id="val-ch-sniper" class="font-mono text-[#ff9d00]">1</span>
+          </div>
+          <input id="ch-sniper-width" type="range" min="1" max="5" step="1" class="w-full cs2-slider" />
+        </div>
+      </div>
+
+      <div class="pt-1 border-t border-slate-800 space-y-3">
+        <div class="text-[11px] font-mono uppercase tracking-wider text-slate-400">CS2 Dynamic Spread & Split Config</div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3">
+          <div>
+            <div class="flex justify-between text-xs mb-1">
+              <span class="text-slate-300">{t('arena.splitDistance')}</span>
+              <span id="val-ch-split-dist" class="font-mono text-[#ff9d00]">6</span>
+            </div>
+            <input id="ch-split-dist" type="range" min="0" max="20" step="1" class="w-full cs2-slider" />
+          </div>
+
+          <div>
+            <div class="flex justify-between text-xs mb-1">
+              <span class="text-slate-300">{t('arena.dynamicSpreadLimit')}</span>
+              <span id="val-ch-spread-limit" class="font-mono text-[#ff9d00]">227</span>
+            </div>
+            <input id="ch-spread-limit" type="range" min="0" max="255" step="1" class="w-full cs2-slider" />
+          </div>
+
+          <div>
+            <div class="flex justify-between text-xs mb-1">
+              <span class="text-slate-300">{t('arena.innerSplitAlpha')}</span>
+              <span id="val-ch-inner-alpha" class="font-mono text-[#ff9d00]">1.00</span>
+            </div>
+            <input id="ch-inner-alpha" type="range" min="0" max="1" step="0.05" class="w-full cs2-slider" />
+          </div>
+
+          <div>
+            <div class="flex justify-between text-xs mb-1">
+              <span class="text-slate-300">{t('arena.outerSplitAlpha')}</span>
+              <span id="val-ch-outer-alpha" class="font-mono text-[#ff9d00]">0.50</span>
+            </div>
+            <input id="ch-outer-alpha" type="range" min="0.3" max="1" step="0.05" class="w-full cs2-slider" />
+          </div>
+
+          <div class="sm:col-span-2">
+            <div class="flex justify-between text-xs mb-1">
+              <span class="text-slate-300">{t('arena.splitSizeRatio')}</span>
+              <span id="val-ch-split-ratio" class="font-mono text-[#ff9d00]">0.30</span>
+            </div>
+            <input id="ch-split-ratio" type="range" min="0" max="1" step="0.05" class="w-full cs2-slider" />
+          </div>
+        </div>
+      </div>
+
+      <div class="pt-2 border-t border-slate-800">
+        <div class="flex items-center justify-between text-xs mb-2">
+          <span class="text-slate-300">{t('arena.color')}</span>
+          <input id="ch-color-picker" type="color" aria-label={t('arena.color')} class="w-7 h-6 rounded-sm cursor-pointer bg-transparent border-0 p-0" />
+        </div>
+        <div id="ch-color-swatches" class="flex flex-wrap gap-2"></div>
+      </div>
+
+      <div class="grid grid-cols-1 gap-2 pt-2 border-t border-slate-800">
+        <label class="flex items-center justify-between p-2.5 rounded-sm bg-[#0b0f17] border border-slate-800 text-xs text-slate-200 cursor-pointer">
+          <span>{t('arena.dot')}</span>
+          <input id="ch-dot" type="checkbox" class="accent-[#ff9d00] cursor-pointer" />
+        </label>
+        <label class="flex items-center justify-between p-2.5 rounded-sm bg-[#0b0f17] border border-slate-800 text-xs text-slate-200 cursor-pointer">
+          <span>{t('arena.tStyle')}</span>
+          <input id="ch-tstyle" type="checkbox" class="accent-[#ff9d00] cursor-pointer" />
+        </label>
+        <label class="flex items-center justify-between p-2.5 rounded-sm bg-[#0b0f17] border border-[#ff9d00]/40 text-xs text-[#ff9d00] font-bold cursor-pointer">
+          <span>{t('arena.followRecoil')} (cl_crosshair_recoil)</span>
+          <input id="ch-follow-recoil" type="checkbox" class="accent-[#ff9d00] cursor-pointer" />
+        </label>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  import { mountCrosshairPage } from '../scripts/crosshairStudio.js';
+  mountCrosshairPage();
+</script>

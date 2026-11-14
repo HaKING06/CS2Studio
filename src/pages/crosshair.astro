@@ -1,0 +1,12 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import CrosshairStudioWidget from '../components/CrosshairStudioWidget.astro';
+import { getDictionary, translateKey } from '../utils/i18n.js';
+
+const dict = getDictionary('en');
+const t = (key: string) => translateKey(dict, key);
+---
+
+<BaseLayout lang="en" pageKey="crosshair" isPrefixed={false} title={t('pages.crosshairTitle')} description={t('pages.crosshairDesc')}>
+  <CrosshairStudioWidget lang="en" />
+</BaseLayout>

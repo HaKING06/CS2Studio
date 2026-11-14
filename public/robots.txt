@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://cs2studio.haking.tr/sitemap-index.xml
+Sitemap: https://cs2studio.haking.tr/sitemap.xml

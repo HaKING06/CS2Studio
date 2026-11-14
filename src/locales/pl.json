@@ -5,14 +5,15 @@
   },
   "nav": {
     "brand": "CS2 STUDIO",
-    "version": "v0.0.1",
+    "version": "v0.0.3",
     "arena": "Arena 3D Spraya",
     "buyBinds": "Bindy Zakupowe",
     "viewmodel": "Viewmodel",
     "autoexec": "Eksport Autoexec",
     "supportBmc": "Postaw Kawę",
     "language": "Język",
-    "home": "Panel"
+    "home": "Panel",
+    "crosshair": "Celownik"
   },
   "hero": {
     "badge": "100% po Stronie Klienta • Bez Logowania • Natychmiastowy Autoexec",
@@ -58,7 +59,17 @@
     "followRecoil": "Podążaj za Odrzutem",
     "sniperWidth": "Grubość Celownika Snajperskiego",
     "dropGlbHint": "Przeciągnij plik .glb broni CS2 na scenę 3D, aby wyświetlić podgląd",
-    "modelStatus": "Model HD Source 2"
+    "modelStatus": "Model HD Source 2",
+    "splitDistance": "Dystans podziału",
+    "innerSplitAlpha": "Alpha wewnętrzna",
+    "outerSplitAlpha": "Alpha zewnętrzna",
+    "splitSizeRatio": "Proporcja podziału",
+    "dynamicSpreadLimit": "Limit rozrzutu",
+    "testSpread": "Symuluj ruch / strzał",
+    "copyConVars": "Kopiuj ConVars",
+    "conVarsCopied": "Skopiowano komendy ConVars!",
+    "liveConVars": "Komendy CS2 na żywo",
+    "openArena3D": "Testuj na 3D Dust2"
   },
   "buyBinds": {
     "title": "Wizualne Studio Bindów Zakupowych",
@@ -144,6 +155,8 @@
     "buyBindsTitle": "Wizualny kreator Buy Binds CS2 — CS2 Studio",
     "buyBindsDesc": "Przeciągaj bronie i granaty na mechaniczną klawiaturę, aby wygenerować gotowe bindy zakupu CS2.",
     "autoexecTitle": "Generator Autoexec.cfg CS2 — CS2 Studio",
-    "autoexecDesc": "Połącz celownik, viewmodel, bindy i komendy FPS w czysty plik autoexec.cfg jednym kliknięciem."
+    "autoexecDesc": "Połącz celownik, viewmodel, bindy i komendy FPS w czysty plik autoexec.cfg jednym kliknięciem.",
+    "crosshairTitle": "Generator Celownika CS2, Follow Recoil i Share Code — CS2 Studio",
+    "crosshairDesc": "Konfiguruj cl_crosshair_recoil, dynamiczny rozrzut, grubość obrysu, szerokość snajperską i kody celowników CS2."
   }
 }

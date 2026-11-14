@@ -10,6 +10,11 @@ import {
   loadNormalizedWeapon,
   loadNormalizedWeaponFromFile,
 } from '../utils/weaponModelLoader.js';
+import {
+  loadDust2Map,
+  setupDust2Lighting,
+  computeDust2RangeLayout,
+} from '../utils/dust2MapLoader.js';
 import { DEFAULT_VIEWMODEL, loadState, saveState } from '../utils/storage.js';
 import { attachGlbDropHandler, notify } from './clientBridge.js';
 
@@ -45,6 +50,7 @@ export function mountViewmodelPage() {
   const copyBtn = document.getElementById('btn-vm-copy');
   const previewCodeEl = document.getElementById('vm-convars-preview');
   const modelLabelEl = document.getElementById('vm-model-label');
+  const mapBadgeEl = document.getElementById('vm-map-badge');
 
   const valEls = {
     fov: document.getElementById('val-vm-fov'),
@@ -61,55 +67,36 @@ export function mountViewmodelPage() {
     weaponSelectEl.value = initId;
   }
 
-  // Three.js Viewmodel Stage (Dust2 corridor backdrop + interactive camera + weapon rig)
+  // Three.js Viewmodel Stage on authentic de_dust2_slice.glb
   const renderer = new THREE.WebGLRenderer({ canvas: glCanvas, antialias: true, powerPreference: 'high-performance' });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.15;
+  renderer.toneMappingExposure = 1.05;
 
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color('#131b2e');
-  scene.fog = new THREE.FogExp2('#161f33', 0.025);
+  const { maxAniso } = setupDust2Lighting(scene, renderer);
 
-  const camera = new THREE.PerspectiveCamera(Number(state.viewmodel.fov || 68), 16 / 9, 0.03, 80);
-  camera.position.set(0, 1.65, 0);
+  const camera = new THREE.PerspectiveCamera(Number(state.viewmodel.fov || 68), 16 / 9, 0.03, 160);
+  camera.rotation.order = 'YXZ';
+  camera.position.set(1.5, 1.62, -7.2);
+  camera.rotation.set(0, -Math.PI / 2, 0);
   scene.add(camera);
 
-  scene.add(new THREE.HemisphereLight('#fde68a', '#1e293b', 1.25));
-  const keyLight = new THREE.DirectionalLight('#fff2d6', 2.2);
-  keyLight.position.set(8, 12, 8);
-  scene.add(keyLight);
-
-  const rimLight = new THREE.DirectionalLight('#38bdf8', 0.85);
-  rimLight.position.set(-6, 5, 4);
-  scene.add(rimLight);
-
-  // Corridor floor & back wall to establish authentic CS2 FOV perspective
-  const floor = new THREE.Mesh(
-    new THREE.PlaneGeometry(30, 50),
-    new THREE.MeshStandardMaterial({ color: '#9c7e59', roughness: 0.92 }),
-  );
-  floor.rotation.x = -Math.PI / 2;
-  floor.position.set(0, 0, -15);
-  scene.add(floor);
-
-  const grid = new THREE.GridHelper(30, 30, '#22d3ee', '#475569');
-  grid.position.set(0, 0.01, -15);
-  grid.material.transparent = true;
-  grid.material.opacity = 0.25;
-  scene.add(grid);
-
-  const wallMat = new THREE.MeshStandardMaterial({ color: '#c4a174', roughness: 0.88 });
-  const backWall = new THREE.Mesh(new THREE.BoxGeometry(16, 6, 0.5), wallMat);
-  backWall.position.set(0, 3, -18);
-  scene.add(backWall);
-
-  const crate = new THREE.Mesh(
-    new THREE.BoxGeometry(1.4, 1.4, 1.4),
-    new THREE.MeshStandardMaterial({ color: '#7c5d3b', roughness: 0.85 }),
-  );
-  crate.position.set(-2.8, 0.7, -9);
-  scene.add(crate);
+  loadDust2Map(scene, maxAniso).then((res) => {
+    const layout = computeDust2RangeLayout(res.mapMeshes, 14);
+    camera.position.copy(layout.cameraPos);
+    camera.rotation.set(0, layout.yaw, 0);
+    if (mapBadgeEl) {
+      mapBadgeEl.textContent = res.isFallback
+        ? 'DROP de_dust2_slice.glb'
+        : 'de_dust2 • Long A';
+      if (res.isFallback) {
+        mapBadgeEl.classList.add('text-red-400', 'border-red-500/40');
+      }
+    }
+  });
 
   const viewmodelRig = new THREE.Group();
   camera.add(viewmodelRig);
@@ -176,9 +163,9 @@ export function mountViewmodelPage() {
 
     presetBtns.forEach((btn) => {
       const isActive = Number(vm.presetpos) === Number(btn.dataset.vmPreset);
-      btn.classList.toggle('border-amber-400', isActive);
-      btn.classList.toggle('bg-amber-500/20', isActive);
-      btn.classList.toggle('text-amber-200', isActive);
+      btn.classList.toggle('border-[#ff9d00]', isActive);
+      btn.classList.toggle('bg-[#ff9d00]/20', isActive);
+      btn.classList.toggle('text-[#ff9d00]', isActive);
       btn.classList.toggle('border-slate-700', !isActive);
       btn.classList.toggle('bg-slate-900/70', !isActive);
     });

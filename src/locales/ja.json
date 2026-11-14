@@ -5,14 +5,15 @@
   },
   "nav": {
     "brand": "CS2 STUDIO",
-    "version": "v0.0.1",
+    "version": "v0.0.3",
     "arena": "3Dスプレーアリーナ",
     "buyBinds": "購入バインド",
     "viewmodel": "ビューモデル",
     "autoexec": "Autoexec出力",
     "supportBmc": "コーヒーを奢る",
     "language": "言語",
-    "home": "ダッシュボード"
+    "home": "ダッシュボード",
+    "crosshair": "クロスヘア"
   },
   "hero": {
     "badge": "100%クライアント動作 • ログイン不要 • 即時Autoexec生成",
@@ -58,7 +59,17 @@
     "followRecoil": "リコイルに追従",
     "sniperWidth": "スナイパースコープ線幅",
     "dropGlbHint": "カスタムCS2 .glb武器ファイルを3Dシーンへドラッグ＆ドロップしてプレビュー",
-    "modelStatus": "Source 2 HD武器モデル"
+    "modelStatus": "Source 2 HD武器モデル",
+    "splitDistance": "動的スプリット距離",
+    "innerSplitAlpha": "内側スプリット透明度",
+    "outerSplitAlpha": "外側スプリット透明度",
+    "splitSizeRatio": "スプリット比率",
+    "dynamicSpreadLimit": "スプレッド上限",
+    "testSpread": "射撃・移動テスト",
+    "copyConVars": "ConVarsをコピー",
+    "conVarsCopied": "クロスヘアコマンドをコピーしました！",
+    "liveConVars": "リアルタイム CS2 ConVars",
+    "openArena3D": "3D Dust2 アリーナで試射"
   },
   "buyBinds": {
     "title": "ビジュアル購入バインドスタジオ",
@@ -144,6 +155,8 @@
     "buyBindsTitle": "CS2 ビジュアルBuy Bindsビルダー — CS2 Studio",
     "buyBindsDesc": "メカニカルキーボードに武器やグレネードをドラッグしてCS2購入バインドを即座に作成。",
     "autoexecTitle": "CS2 Autoexec.cfg生成・書き出し — CS2 Studio",
-    "autoexecDesc": "クロスヘア、Viewmodel、Buy Binds、FPS最適化を1つのautoexec.cfgにまとめてダウンロード。"
+    "autoexecDesc": "クロスヘア、Viewmodel、Buy Binds、FPS最適化を1つのautoexec.cfgにまとめてダウンロード。",
+    "crosshairTitle": "CS2 クロスヘア生成・リコイル追従・共有コード — CS2 Studio",
+    "crosshairDesc": "CS2のcl_crosshair_recoil、動的スプレッド、アウトライン太さ、スナイパー幅のカスタマイズと共有コード変換。"
   }
 }

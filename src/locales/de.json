@@ -5,14 +5,15 @@
   },
   "nav": {
     "brand": "CS2 STUDIO",
-    "version": "v0.0.1",
+    "version": "v0.0.3",
     "arena": "3D Spray-Arena",
     "buyBinds": "Kauf-Binds",
     "viewmodel": "Viewmodel",
     "autoexec": "Autoexec-Export",
     "supportBmc": "Kaffee spendieren",
     "language": "Sprache",
-    "home": "Dashboard"
+    "home": "Dashboard",
+    "crosshair": "Fadenkreuz"
   },
   "hero": {
     "badge": "100 % Clientseitig • Kein Login • Sofortiges Autoexec",
@@ -58,7 +59,17 @@
     "followRecoil": "Rückstoß folgen",
     "sniperWidth": "Sniper-Fadenkreuzbreite",
     "dropGlbHint": "Beliebige CS2-.glb-Waffendatei auf die 3D-Szene ziehen",
-    "modelStatus": "Source 2 HD-Waffenmodell"
+    "modelStatus": "Source 2 HD-Waffenmodell",
+    "splitDistance": "Split-Abstand",
+    "innerSplitAlpha": "Innere Split-Alpha",
+    "outerSplitAlpha": "Äußere Split-Alpha",
+    "splitSizeRatio": "Split-Größenverhältnis",
+    "dynamicSpreadLimit": "Streuungslimit",
+    "testSpread": "Schuss- / Lauf-Test",
+    "copyConVars": "ConVars kopieren",
+    "conVarsCopied": "Crosshair-ConVars kopiert!",
+    "liveConVars": "Live CS2 ConVars",
+    "openArena3D": "In 3D Dust2 Arena testen"
   },
   "buyBinds": {
     "title": "Visuelles Kauf-Binds-Studio",
@@ -144,6 +155,8 @@
     "buyBindsTitle": "CS2 Visueller Buy-Binds-Generator — CS2 Studio",
     "buyBindsDesc": "Ziehe CS2-Waffen und Granaten per Drag-and-Drop auf die mechanische Tastatur für fertige Buy-Bind-Skripte.",
     "autoexecTitle": "CS2 Autoexec.cfg-Generator & Exporter — CS2 Studio",
-    "autoexecDesc": "Kompiliere Fadenkreuz, Viewmodel, Buy-Binds und FPS-Tweaks in eine saubere autoexec.cfg."
+    "autoexecDesc": "Kompiliere Fadenkreuz, Viewmodel, Buy-Binds und FPS-Tweaks in eine saubere autoexec.cfg.",
+    "crosshairTitle": "CS2 Crosshair Generator, Follow Recoil & Share Codes — CS2 Studio",
+    "crosshairDesc": "CS2 cl_crosshair_recoil, dynamische Streuung, Konturstärke und Sniper-Linienbreite anpassen sowie CS2 Share Codes konvertieren."
   }
 }

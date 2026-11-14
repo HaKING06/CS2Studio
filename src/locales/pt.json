@@ -5,14 +5,15 @@
   },
   "nav": {
     "brand": "CS2 STUDIO",
-    "version": "v0.0.1",
+    "version": "v0.0.3",
     "arena": "Arena 3D de Spray",
     "buyBinds": "Binds de Compra",
     "viewmodel": "Viewmodel",
     "autoexec": "Exportar Autoexec",
     "supportBmc": "Pague um Café",
     "language": "Idioma",
-    "home": "Painel"
+    "home": "Painel",
+    "crosshair": "Mira"
   },
   "hero": {
     "badge": "100% no Navegador • Sem Login • Autoexec Instantâneo",
@@ -58,7 +59,17 @@
     "followRecoil": "Seguir Recuo",
     "sniperWidth": "Espessura da Mira Sniper",
     "dropGlbHint": "Arraste qualquer arquivo .glb do CS2 para a cena 3D para visualizar",
-    "modelStatus": "Malha HD Source 2"
+    "modelStatus": "Malha HD Source 2",
+    "splitDistance": "Distância de Divisão",
+    "innerSplitAlpha": "Alpha Interno",
+    "outerSplitAlpha": "Alpha Externo",
+    "splitSizeRatio": "Proporção de Divisão",
+    "dynamicSpreadLimit": "Limite de Dispersão",
+    "testSpread": "Simular Tiro / Movimento",
+    "copyConVars": "Copiar ConVars",
+    "conVarsCopied": "Comandos ConVars copiados!",
+    "liveConVars": "ConVars CS2 ao Vivo",
+    "openArena3D": "Testar na Arena 3D Dust2"
   },
   "buyBinds": {
     "title": "Estúdio Visual de Binds de Compra",
@@ -144,6 +155,8 @@
     "buyBindsTitle": "Criador Visual de Buy Binds CS2 — CS2 Studio",
     "buyBindsDesc": "Arraste armas e utilitários para um teclado mecânico interativo e gere binds de compra instantâneos.",
     "autoexecTitle": "Gerador e Exportador Autoexec.cfg CS2 — CS2 Studio",
-    "autoexecDesc": "Exporte mira, viewmodel, binds de compra e otimizações de FPS em um autoexec.cfg limpo."
+    "autoexecDesc": "Exporte mira, viewmodel, binds de compra e otimizações de FPS em um autoexec.cfg limpo.",
+    "crosshairTitle": "Gerador de Mira CS2, Follow Recoil & Share Codes — CS2 Studio",
+    "crosshairDesc": "Configure cl_crosshair_recoil, dispersão dinâmica, espessura de contorno, largura sniper e códigos de mira CS2."
   }
 }

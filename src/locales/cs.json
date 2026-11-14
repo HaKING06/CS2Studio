@@ -5,14 +5,15 @@
   },
   "nav": {
     "brand": "CS2 STUDIO",
-    "version": "v0.0.1",
+    "version": "v0.0.3",
     "arena": "3D Spray Aréna",
     "buyBinds": "Nákupní Bindy",
     "viewmodel": "Viewmodel",
     "autoexec": "Export Autoexec",
     "supportBmc": "Kup mi kávu",
     "language": "Jazyk",
-    "home": "Přehled"
+    "home": "Přehled",
+    "crosshair": "Zaměřovač"
   },
   "hero": {
     "badge": "100% na Straně Klienta • Bez Přihlášení • Okamžitý Autoexec",
@@ -58,7 +59,17 @@
     "followRecoil": "Sledovat Zpětný Ráz",
     "sniperWidth": "Tloušťka Kříže Odstřelovačky",
     "dropGlbHint": "Přetáhněte libovolný soubor .glb zbraně CS2 na 3D scénu pro náhled",
-    "modelStatus": "Source 2 HD model zbraně"
+    "modelStatus": "Source 2 HD model zbraně",
+    "splitDistance": "Vzdálenost dělení",
+    "innerSplitAlpha": "Vnitřní Alpha",
+    "outerSplitAlpha": "Vnější Alpha",
+    "splitSizeRatio": "Poměr dělení",
+    "dynamicSpreadLimit": "Limit rozptylu",
+    "testSpread": "Simulovat střelbu / pohyb",
+    "copyConVars": "Kopírovat ConVars",
+    "conVarsCopied": "ConVars zaměřovače zkopírovány!",
+    "liveConVars": "Živé CS2 ConVars",
+    "openArena3D": "Testovat v 3D Dust2"
   },
   "buyBinds": {
     "title": "Vizuální Studio Nákupních Bindů",
@@ -144,6 +155,8 @@
     "buyBindsTitle": "CS2 Vizuální tvůrce Buy Bindů — CS2 Studio",
     "buyBindsDesc": "Přetáhněte zbraně a granáty na mechanickou klávesnici a okamžitě vygenerujte buy bindy CS2.",
     "autoexecTitle": "CS2 Autoexec.cfg Generátor a Exportér — CS2 Studio",
-    "autoexecDesc": "Spojte zaměřovač, viewmodel, buy bindy a FPS optimalizace do čistého souboru autoexec.cfg."
+    "autoexecDesc": "Spojte zaměřovač, viewmodel, buy bindy a FPS optimalizace do čistého souboru autoexec.cfg.",
+    "crosshairTitle": "CS2 Generátor Zaměřovače, Follow Recoil & Kódy — CS2 Studio",
+    "crosshairDesc": "Upravte cl_crosshair_recoil, dynamický rozptyl, tloušťku obrysu, šířku odstřelovačky a sdílené kódy CS2."
   }
 }

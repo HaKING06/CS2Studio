@@ -5,14 +5,15 @@
   },
   "nav": {
     "brand": "CS2 STUDIO",
-    "version": "v0.0.1",
+    "version": "v0.0.3",
     "arena": "Arena 3D Spray",
     "buyBinds": "Bind d'Acquisto",
     "viewmodel": "Viewmodel",
     "autoexec": "Esporta Autoexec",
     "supportBmc": "Offrimi un Caffè",
     "language": "Lingua",
-    "home": "Dashboard"
+    "home": "Dashboard",
+    "crosshair": "Mirino"
   },
   "hero": {
     "badge": "100% Client-Side • Zero Login • Autoexec Istantaneo",
@@ -58,7 +59,17 @@
     "followRecoil": "Segui Rinculo",
     "sniperWidth": "Spessore Mirino Cecchino",
     "dropGlbHint": "Trascina qualsiasi file .glb CS2 nella scena 3D per l'anteprima",
-    "modelStatus": "Modello HD Source 2"
+    "modelStatus": "Modello HD Source 2",
+    "splitDistance": "Distanza Split",
+    "innerSplitAlpha": "Alpha Interno",
+    "outerSplitAlpha": "Alpha Esterno",
+    "splitSizeRatio": "Rapporto Divisione",
+    "dynamicSpreadLimit": "Limite Dispersione",
+    "testSpread": "Simula Fuoco / Movimento",
+    "copyConVars": "Copia ConVars",
+    "conVarsCopied": "ConVars del mirino copiati!",
+    "liveConVars": "ConVars CS2 Live",
+    "openArena3D": "Testa in Dust2 3D"
   },
   "buyBinds": {
     "title": "Studio Visivo dei Bind d'Acquisto",
@@ -144,6 +155,8 @@
     "buyBindsTitle": "Creatore Visivo Buy Binds CS2 — CS2 Studio",
     "buyBindsDesc": "Trascina armi e utilità sulla tastiera meccanica interattiva per generare i buy bind CS2.",
     "autoexecTitle": "Generatore Autoexec.cfg CS2 — CS2 Studio",
-    "autoexecDesc": "Unisci mirino, viewmodel, buy bind e ottimizzazioni FPS in un file autoexec.cfg pronto."
+    "autoexecDesc": "Unisci mirino, viewmodel, buy bind e ottimizzazioni FPS in un file autoexec.cfg pronto.",
+    "crosshairTitle": "Generatore Mirino CS2, Follow Recoil & Share Codes — CS2 Studio",
+    "crosshairDesc": "Personalizza cl_crosshair_recoil, dispersione dinamica, spessore contorno, larghezza cecchino e codici CS2."
   }
 }

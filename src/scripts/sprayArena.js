@@ -11,6 +11,11 @@ import {
   loadNormalizedWeaponFromFile,
 } from '../utils/weaponModelLoader.js';
 import {
+  loadDust2Map,
+  setupDust2Lighting,
+  computeDust2RangeLayout,
+} from '../utils/dust2MapLoader.js';
+import {
   CROSSHAIR_COLOR_PRESETS,
   drawCrosshairOnCanvas,
   buildCrosshairMiniSvg,
@@ -23,105 +28,7 @@ import { loadState, saveState } from '../utils/storage.js';
 import { t, notify, attachGlbDropHandler } from './clientBridge.js';
 
 const RECOIL_RAD_SCALE = 0.00055;
-const EYE_HEIGHT = 1.65;
 const MAX_DECALS = 90;
-
-function createDust2WallTexture() {
-  const canvas = document.createElement('canvas');
-  canvas.width = 1024;
-  canvas.height = 512;
-  const ctx = canvas.getContext('2d');
-
-  const grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
-  grad.addColorStop(0, '#d6b68a');
-  grad.addColorStop(0.75, '#c6a273');
-  grad.addColorStop(1, '#9d7c53');
-  ctx.fillStyle = grad;
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-  ctx.strokeStyle = 'rgba(85, 62, 36, 0.24)';
-  ctx.lineWidth = 2;
-  const rows = 8;
-  const rowH = canvas.height / rows;
-  for (let r = 0; r < rows; r++) {
-    const y = r * rowH;
-    ctx.beginPath();
-    ctx.moveTo(0, y);
-    ctx.lineTo(canvas.width, y);
-    ctx.stroke();
-
-    const cols = 8;
-    const colW = canvas.width / cols;
-    const offset = (r % 2) * (colW / 2);
-    for (let c = 0; c <= cols; c++) {
-      const x = c * colW + offset;
-      ctx.beginPath();
-      ctx.moveTo(x, y);
-      ctx.lineTo(x, y + rowH);
-      ctx.stroke();
-    }
-  }
-
-  for (let i = 0; i < 6500; i++) {
-    const x = Math.random() * canvas.width;
-    const y = Math.random() * canvas.height;
-    ctx.fillStyle = Math.random() > 0.5 ? 'rgba(255,245,220,0.06)' : 'rgba(60,42,24,0.07)';
-    ctx.fillRect(x, y, 2, 2);
-  }
-
-  ctx.fillStyle = 'rgba(54, 42, 30, 0.45)';
-  ctx.fillRect(0, canvas.height - 46, canvas.width, 46);
-
-  ctx.save();
-  ctx.fillStyle = 'rgba(139, 38, 29, 0.62)';
-  ctx.font = 'bold 78px sans-serif';
-  ctx.fillText('A', 64, 118);
-  ctx.font = 'bold 16px monospace';
-  ctx.fillStyle = 'rgba(55, 42, 28, 0.72)';
-  ctx.fillText('CS2 STUDIO • SPRAY TEST RANGE', 64, 146);
-  ctx.restore();
-
-  const tex = new THREE.CanvasTexture(canvas);
-  tex.colorSpace = THREE.SRGBColorSpace;
-  tex.wrapS = THREE.RepeatWrapping;
-  tex.wrapT = THREE.ClampToEdgeWrapping;
-  return tex;
-}
-
-function createDust2FloorTexture() {
-  const canvas = document.createElement('canvas');
-  canvas.width = 512;
-  canvas.height = 512;
-  const ctx = canvas.getContext('2d');
-
-  ctx.fillStyle = '#b4946c';
-  ctx.fillRect(0, 0, 512, 512);
-
-  for (let i = 0; i < 5000; i++) {
-    ctx.fillStyle = Math.random() > 0.5 ? 'rgba(255,235,205,0.06)' : 'rgba(70,50,30,0.08)';
-    ctx.fillRect(Math.random() * 512, Math.random() * 512, 2, 2);
-  }
-
-  ctx.strokeStyle = 'rgba(72, 54, 34, 0.18)';
-  ctx.lineWidth = 2;
-  for (let i = 0; i <= 512; i += 64) {
-    ctx.beginPath();
-    ctx.moveTo(i, 0);
-    ctx.lineTo(i, 512);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(0, i);
-    ctx.lineTo(512, i);
-    ctx.stroke();
-  }
-
-  const tex = new THREE.CanvasTexture(canvas);
-  tex.colorSpace = THREE.SRGBColorSpace;
-  tex.wrapS = THREE.RepeatWrapping;
-  tex.wrapT = THREE.RepeatWrapping;
-  tex.repeat.set(8, 12);
-  return tex;
-}
 
 function createTargetTexture() {
   const canvas = document.createElement('canvas');
@@ -129,55 +36,36 @@ function createTargetTexture() {
   canvas.height = 512;
   const ctx = canvas.getContext('2d');
 
-  ctx.fillStyle = 'rgba(15, 23, 42, 0.9)';
-  ctx.fillRect(0, 0, 512, 512);
-
-  ctx.strokeStyle = 'rgba(34, 211, 238, 0.14)';
-  ctx.lineWidth = 1;
-  for (let i = 32; i < 512; i += 32) {
-    ctx.beginPath();
-    ctx.moveTo(i, 0);
-    ctx.lineTo(i, 512);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(0, i);
-    ctx.lineTo(512, i);
-    ctx.stroke();
-  }
-
-  ctx.strokeStyle = '#f59e0b';
-  ctx.lineWidth = 6;
-  ctx.strokeRect(8, 8, 496, 496);
+  ctx.clearRect(0, 0, 512, 512);
+  ctx.fillStyle = 'rgba(11, 15, 23, 0.56)';
+  ctx.beginPath();
+  ctx.arc(256, 256, 224, 0, Math.PI * 2);
+  ctx.fill();
 
   const rings = [
-    { r: 190, stroke: 'rgba(148,163,184,0.45)', fill: 'rgba(30,41,59,0.45)' },
-    { r: 120, stroke: 'rgba(34,211,238,0.65)', fill: 'rgba(8,145,178,0.16)' },
-    { r: 62, stroke: '#fbbf24', fill: 'rgba(245,158,11,0.22)' },
-    { r: 22, stroke: '#ef4444', fill: 'rgba(239,68,68,0.48)' },
+    { r: 210, stroke: 'rgba(255, 157, 0, 0.48)', fill: 'rgba(15, 23, 42, 0.22)', lw: 3 },
+    { r: 140, stroke: 'rgba(255, 255, 255, 0.35)', fill: 'rgba(15, 23, 42, 0.14)', lw: 2 },
+    { r: 74, stroke: '#ff9d00', fill: 'rgba(255, 157, 0, 0.14)', lw: 3 },
+    { r: 26, stroke: '#ef4444', fill: 'rgba(239, 68, 68, 0.45)', lw: 3 },
   ];
   rings.forEach((ring) => {
     ctx.beginPath();
     ctx.arc(256, 256, ring.r, 0, Math.PI * 2);
     ctx.fillStyle = ring.fill;
     ctx.fill();
-    ctx.lineWidth = 3;
+    ctx.lineWidth = ring.lw;
     ctx.strokeStyle = ring.stroke;
     ctx.stroke();
   });
 
-  ctx.strokeStyle = 'rgba(255,255,255,0.22)';
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.24)';
   ctx.lineWidth = 1.5;
   ctx.beginPath();
-  ctx.moveTo(256, 30);
-  ctx.lineTo(256, 482);
-  ctx.moveTo(30, 256);
-  ctx.lineTo(482, 256);
+  ctx.moveTo(256, 38);
+  ctx.lineTo(256, 474);
+  ctx.moveTo(38, 256);
+  ctx.lineTo(474, 256);
   ctx.stroke();
-
-  ctx.fillStyle = '#fbbf24';
-  ctx.font = 'bold 18px monospace';
-  ctx.textAlign = 'center';
-  ctx.fillText('HEADSHOT ZONE', 256, 42);
 
   const tex = new THREE.CanvasTexture(canvas);
   tex.colorSpace = THREE.SRGBColorSpace;
@@ -217,7 +105,7 @@ class SynthAudio {
       this.ctx = new AudioCtx();
     }
     if (this.ctx.state === 'suspended') {
-      this.ctx.resume().catch(() => {});
+      this.ctx.resume().catch(() => { });
     }
     return this.ctx;
   }
@@ -293,6 +181,7 @@ export function mountSprayArenaPage() {
   const statAccuracyEl = document.getElementById('stat-accuracy');
   const magCounterEl = document.getElementById('arena-mag-counter');
   const weaponBadgeEl = document.getElementById('arena-weapon-badge');
+  const mapBadgeEl = document.getElementById('arena-map-badge');
 
   if (weaponSelectEl) {
     weaponSelectEl.innerHTML = ARENA_WEAPON_LIST.map((id) => {
@@ -302,94 +191,55 @@ export function mountSprayArenaPage() {
     weaponSelectEl.value = state.arena.weaponId || 'ak47';
   }
 
-  // Three.js Scene
+  // Three.js Scene + Authentic Dust2 Daylight Rig
   const renderer = new THREE.WebGLRenderer({ canvas: glCanvas, antialias: true, powerPreference: 'high-performance' });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.08;
+  renderer.toneMappingExposure = 1.05;
 
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color('#131b2c');
-  scene.fog = new THREE.FogExp2('#161f33', 0.014);
+  const { maxAniso } = setupDust2Lighting(scene, renderer);
 
-  const camera = new THREE.PerspectiveCamera(Number(state.viewmodel.fov || 68), 16 / 9, 0.04, 150);
-  camera.position.set(0, EYE_HEIGHT, 0);
+  const camera = new THREE.PerspectiveCamera(Number(state.viewmodel.fov || 68), 16 / 9, 0.04, 180);
   camera.rotation.order = 'YXZ';
   scene.add(camera);
 
-  scene.add(new THREE.HemisphereLight('#fde68a', '#1e293b', 1.15));
-  const sunLight = new THREE.DirectionalLight('#fff1d0', 2.0);
-  sunLight.position.set(12, 18, 10);
-  scene.add(sunLight);
+  let mapMeshes = [];
+  let rangeLayout = {
+    cameraPos: new THREE.Vector3(-4.08, 1.62, -7.2),
+    wallPoint: new THREE.Vector3(15.92, 1.62, -7.2),
+    wallNormal: new THREE.Vector3(-1, 0, 0),
+    yaw: -Math.PI / 2,
+    pitch: 0,
+    actualDistance: Number(state.arena.distanceMeters || 20),
+  };
 
-  const fillLight = new THREE.DirectionalLight('#38bdf8', 0.55);
-  fillLight.position.set(-10, 8, 6);
-  scene.add(fillLight);
+  camera.position.copy(rangeLayout.cameraPos);
+  camera.rotation.set(0, rangeLayout.yaw, 0);
 
-  const wallTex = createDust2WallTexture();
-  const floorTex = createDust2FloorTexture();
   const targetTex = createTargetTexture();
   const decalTex = createBulletDecalTexture();
 
-  const floor = new THREE.Mesh(
-    new THREE.PlaneGeometry(40, 75),
-    new THREE.MeshStandardMaterial({ map: floorTex, roughness: 0.92, metalness: 0.05 }),
-  );
-  floor.rotation.x = -Math.PI / 2;
-  floor.position.set(0, 0, -25);
-  scene.add(floor);
-
-  const crateMat = new THREE.MeshStandardMaterial({ color: '#8f6b47', roughness: 0.85 });
-  const cratePositions = [
-    [-4.6, 0.65, -7.5, 1.3, 1.3, 1.3],
-    [-4.3, 1.9, -7.6, 1.1, 1.1, 1.1],
-    [4.8, 0.8, -11.5, 1.6, 1.6, 1.6],
-    [4.4, 0.55, -21.0, 1.1, 1.1, 1.1],
-  ];
-  cratePositions.forEach(([x, y, z, w, h, d]) => {
-    const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), crateMat);
-    mesh.position.set(x, y, z);
-    scene.add(mesh);
-  });
-
-  const leftWall = new THREE.Mesh(
-    new THREE.BoxGeometry(0.6, 5.2, 65),
-    new THREE.MeshStandardMaterial({ map: wallTex, roughness: 0.9 }),
-  );
-  leftWall.position.set(-6.8, 2.6, -24);
-  scene.add(leftWall);
-
-  const rightWall = leftWall.clone();
-  rightWall.position.set(6.8, 2.6, -24);
-  scene.add(rightWall);
-
   const targetWallGroup = new THREE.Group();
-  targetWallGroup.position.set(0, 0, -Number(state.arena.distanceMeters || 20));
   scene.add(targetWallGroup);
 
-  const mainWall = new THREE.Mesh(
-    new THREE.BoxGeometry(13.2, 7.2, 0.5),
-    new THREE.MeshStandardMaterial({ map: wallTex, roughness: 0.88 }),
-  );
-  mainWall.position.set(0, 3.6, -0.25);
-  targetWallGroup.add(mainWall);
-
   const targetPlane = new THREE.Mesh(
-    new THREE.PlaneGeometry(1.85, 1.85),
-    new THREE.MeshStandardMaterial({ map: targetTex, roughness: 0.75 }),
+    new THREE.PlaneGeometry(1.75, 1.75),
+    new THREE.MeshBasicMaterial({ map: targetTex, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -1 }),
   );
-  targetPlane.position.set(0, EYE_HEIGHT, 0.01);
   targetWallGroup.add(targetPlane);
 
   const ghostGroup = new THREE.Group();
-  ghostGroup.position.set(0, EYE_HEIGHT, 0.02);
+  ghostGroup.position.set(0, 0, 0.015);
   targetWallGroup.add(ghostGroup);
 
   const guideDotMesh = new THREE.Mesh(
-    new THREE.RingGeometry(0.035, 0.06, 24),
-    new THREE.MeshBasicMaterial({ color: '#22d3ee', transparent: true, opacity: 0.9, side: THREE.DoubleSide }),
+    new THREE.RingGeometry(0.036, 0.062, 24),
+    new THREE.MeshBasicMaterial({ color: '#ff9d00', transparent: true, opacity: 0.95, side: THREE.DoubleSide }),
   );
-  guideDotMesh.position.set(0, 0, 0.01);
+  guideDotMesh.position.set(0, 0, 0.02);
   ghostGroup.add(guideDotMesh);
 
   let ghostPathLine = null;
@@ -402,31 +252,57 @@ export function mountSprayArenaPage() {
     }
 
     const wId = state.arena.weaponId || 'ak47';
-    const dist = Number(state.arena.distanceMeters || 20);
+    const dist = rangeLayout.actualDistance || Number(state.arena.distanceMeters || 20);
     const pts = getCumulativeWallPoints(wId, 1);
     const isControl = state.arena.mode === 'control';
 
     const vertices = pts.map((pt) => {
       const sign = isControl ? -1 : 1;
-      const yaw = sign * pt.cumX * RECOIL_RAD_SCALE;
-      const pitch = sign * pt.cumY * RECOIL_RAD_SCALE;
-      return new THREE.Vector3(Math.tan(yaw) * dist, Math.tan(pitch) * dist, 0.012);
+      const dxRad = sign * pt.cumX * RECOIL_RAD_SCALE;
+      const dyRad = sign * pt.cumY * RECOIL_RAD_SCALE;
+      return new THREE.Vector3(Math.tan(dxRad) * dist, Math.tan(dyRad) * dist, 0.014);
     });
 
     const geom = new THREE.BufferGeometry().setFromPoints(vertices);
     const mat = new THREE.LineBasicMaterial({
-      color: isControl ? '#22d3ee' : '#f59e0b',
+      color: isControl ? '#ff9d00' : '#fbbf24',
       transparent: true,
-      opacity: 0.55,
+      opacity: 0.72,
     });
     ghostPathLine = new THREE.Line(geom, mat);
     ghostGroup.add(ghostPathLine);
     ghostGroup.visible = Boolean(state.arena.showGhostGuide);
   }
 
-  const decalsGroup = new THREE.Group();
-  decalsGroup.position.set(0, 0, 0.015);
-  targetWallGroup.add(decalsGroup);
+  function applyRangePosition() {
+    rangeLayout = computeDust2RangeLayout(mapMeshes, Number(state.arena.distanceMeters || 20));
+    camera.position.copy(rangeLayout.cameraPos);
+
+    targetWallGroup.position
+      .copy(rangeLayout.wallPoint)
+      .addScaledVector(rangeLayout.wallNormal, 0.018);
+    targetWallGroup.lookAt(
+      rangeLayout.wallPoint.clone().addScaledVector(rangeLayout.wallNormal, 2),
+    );
+    rebuildGhostPattern();
+  }
+
+  // Load real de_dust2_slice.glb asynchronously cleanly
+  loadDust2Map(scene, maxAniso).then((res) => {
+    mapMeshes = res.mapMeshes;
+    applyRangePosition();
+    if (mapBadgeEl) {
+      mapBadgeEl.textContent = res.isFallback
+        ? 'DROP de_dust2_slice.glb'
+        : 'de_dust2 • Long A';
+      if (res.isFallback) {
+        mapBadgeEl.classList.add('text-red-400', 'border-red-500/40');
+      }
+    }
+  });
+
+  const decalsWorldGroup = new THREE.Group();
+  scene.add(decalsWorldGroup);
   const decalPool = [];
   const tracers = [];
   const decalMat = new THREE.MeshBasicMaterial({
@@ -434,440 +310,463 @@ export function mountSprayArenaPage() {
     transparent: true,
     depthWrite: false,
     polygonOffset: true,
-    polygonOffsetFactor: -1,
+    polygonOffsetFactor: -2,
   });
   const decalGeom = new THREE.PlaneGeometry(0.11, 0.11);
 
-  function addBulletDecal(localX, localY) {
-    const mesh = new THREE.Mesh(decalGeom, decalMat);
-    mesh.position.set(localX, localY, 0.002 + decalPool.length * 0.00025);
-    mesh.rotation.z = Math.random() * Math.PI * 2;
-    decalsGroup.add(mesh);
-    decalPool.push(mesh);
-    if (decalPool.length > MAX_DECALS) {
-      decalsGroup.remove(decalPool.shift());
+    function addBulletDecalWorld(worldPt, worldNormal) {
+      const mesh = new THREE.Mesh(decalGeom, decalMat);
+      mesh.position.copy(worldPt).addScaledVector(worldNormal, 0.012 + decalPool.length * 0.0003);
+      mesh.lookAt(worldPt.clone().add(worldNormal));
+      mesh.rotateZ(Math.random() * Math.PI * 2);
+      decalsWorldGroup.add(mesh);
+      decalPool.push(mesh);
+      if (decalPool.length > MAX_DECALS) {
+        decalsWorldGroup.remove(decalPool.shift());
+      }
     }
-  }
 
-  function clearDecals() {
-    while (decalPool.length) {
-      decalsGroup.remove(decalPool.pop());
+    function clearDecals() {
+      while (decalPool.length) {
+        decalsWorldGroup.remove(decalPool.pop());
+      }
     }
-  }
 
-  function spawnTracer(startWorld, endWorld) {
-    const geom = new THREE.BufferGeometry().setFromPoints([startWorld, endWorld]);
-    const mat = new THREE.LineBasicMaterial({ color: '#fde68a', transparent: true, opacity: 0.85 });
-    const line = new THREE.Line(geom, mat);
-    scene.add(line);
-    tracers.push({ line, life: 0.075 });
-  }
+    function spawnTracer(startWorld, endWorld) {
+      const geom = new THREE.BufferGeometry().setFromPoints([startWorld, endWorld]);
+      const mat = new THREE.LineBasicMaterial({ color: '#fde68a', transparent: true, opacity: 0.88 });
+      const line = new THREE.Line(geom, mat);
+      scene.add(line);
+      tracers.push({ line, life: 0.075 });
+    }
 
-  const viewmodelRig = new THREE.Group();
-  camera.add(viewmodelRig);
+    const viewmodelRig = new THREE.Group();
+    camera.add(viewmodelRig);
 
-  const weaponContainer = new THREE.Group();
-  viewmodelRig.add(weaponContainer);
+    const weaponContainer = new THREE.Group();
+    viewmodelRig.add(weaponContainer);
 
-  const muzzleFlash = new THREE.Mesh(
-    new THREE.SphereGeometry(0.042, 8, 8),
-    new THREE.MeshBasicMaterial({ color: '#fef08a', transparent: true, opacity: 0 }),
-  );
-  const muzzleLight = new THREE.PointLight('#fbbf24', 0, 4);
-  weaponContainer.add(muzzleFlash);
-  weaponContainer.add(muzzleLight);
-
-  let currentWeaponMesh = null;
-  let activeModelKey = 'ak47';
-
-  function applyViewmodelTransform() {
-    const vm = state.viewmodel;
-    const pose = FPS_POSES[activeModelKey] || FPS_POSES.ak47;
-
-    camera.fov = Math.max(54, Math.min(75, Number(vm.fov ?? 68)));
-    camera.updateProjectionMatrix();
-
-    const xShift = (Number(vm.offsetX ?? 2.5) - 2.5) * 0.025;
-    const yShift = -(Number(vm.offsetY ?? 0)) * 0.036;
-    const zShift = (Number(vm.offsetZ ?? -1.5) + 1.5) * 0.025;
-
-    viewmodelRig.position.set(
-      pose.pos[0] + xShift,
-      pose.pos[1] + zShift,
-      pose.pos[2] + yShift,
+    const muzzleFlash = new THREE.Mesh(
+      new THREE.SphereGeometry(0.042, 8, 8),
+      new THREE.MeshBasicMaterial({ color: '#fef08a', transparent: true, opacity: 0 }),
     );
-    viewmodelRig.rotation.set(pose.rot[0], pose.rot[1], pose.rot[2]);
-  }
+    const muzzleLight = new THREE.PointLight('#fbbf24', 0, 4);
+    weaponContainer.add(muzzleFlash);
+    weaponContainer.add(muzzleLight);
 
-  function mountWeaponObject(normalizedGroup, labelText) {
-    if (currentWeaponMesh) {
-      weaponContainer.remove(currentWeaponMesh);
-    }
-    currentWeaponMesh = normalizedGroup;
-    weaponContainer.add(currentWeaponMesh);
-    activeModelKey = normalizedGroup.userData?.modelKey || 'ak47';
+    let currentWeaponMesh = null;
+    let activeModelKey = 'ak47';
 
-    const muzzleObj = currentWeaponMesh.getObjectByName('Muzzle');
-    if (muzzleObj) {
-      muzzleFlash.position.copy(muzzleObj.position);
-      muzzleLight.position.copy(muzzleObj.position);
-    } else {
-      muzzleFlash.position.set(0, 0.05, -0.45);
-      muzzleLight.position.set(0, 0.05, -0.45);
-    }
+    function applyViewmodelTransform() {
+      const vm = state.viewmodel;
+      const pose = FPS_POSES[activeModelKey] || FPS_POSES.ak47;
 
-    if (weaponBadgeEl && labelText) {
-      weaponBadgeEl.textContent = labelText;
-    }
-    applyViewmodelTransform();
-  }
+      camera.fov = Math.max(54, Math.min(75, Number(vm.fov ?? 68)));
+      camera.updateProjectionMatrix();
 
-  async function equipWeapon(weaponId) {
-    const data = getWeaponData(weaponId);
-    activeModelKey = inferModelKey(data.modelUrl);
-    if (weaponBadgeEl) {
-      weaponBadgeEl.textContent = `${data.name} • $${data.price}`;
+      const xShift = (Number(vm.offsetX ?? 2.5) - 2.5) * 0.025;
+      const yShift = -(Number(vm.offsetY ?? 0)) * 0.036;
+      const zShift = (Number(vm.offsetZ ?? -1.5) + 1.5) * 0.025;
+
+      viewmodelRig.position.set(
+        pose.pos[0] + xShift,
+        pose.pos[1] + zShift,
+        pose.pos[2] + yShift,
+      );
+      viewmodelRig.rotation.set(pose.rot[0], pose.rot[1], pose.rot[2]);
     }
 
-    try {
-      const normalized = await loadNormalizedWeapon(data.modelUrl);
-      mountWeaponObject(normalized, `${data.name} • $${data.price}`);
-    } catch {
-      notify('error', `Could not load model: ${data.modelUrl}`);
+    function mountWeaponObject(normalizedGroup, labelText) {
+      if (currentWeaponMesh) {
+        weaponContainer.remove(currentWeaponMesh);
+      }
+      currentWeaponMesh = normalizedGroup;
+      weaponContainer.add(currentWeaponMesh);
+      activeModelKey = normalizedGroup.userData?.modelKey || 'ak47';
+
+      const muzzleObj = currentWeaponMesh.getObjectByName('Muzzle');
+      if (muzzleObj) {
+        muzzleFlash.position.copy(muzzleObj.position);
+        muzzleLight.position.copy(muzzleObj.position);
+      } else {
+        muzzleFlash.position.set(0, 0.05, -0.45);
+        muzzleLight.position.set(0, 0.05, -0.45);
+      }
+
+      if (weaponBadgeEl && labelText) {
+        weaponBadgeEl.textContent = labelText;
+      }
+      applyViewmodelTransform();
     }
 
-    resetWeaponBurst();
-    rebuildGhostPattern();
-    updateHudStats();
-  }
+    async function equipWeapon(weaponId) {
+      const data = getWeaponData(weaponId);
+      activeModelKey = inferModelKey(data.modelUrl);
+      if (weaponBadgeEl) {
+        weaponBadgeEl.textContent = `${data.name} • $${data.price}`;
+      }
 
-  attachGlbDropHandler(stageEl, async (file) => {
-    const normalized = await loadNormalizedWeaponFromFile(file);
-    mountWeaponObject(normalized, file.name);
-    notify('success', file.name);
-  });
+      try {
+        const normalized = await loadNormalizedWeapon(data.modelUrl);
+        mountWeaponObject(normalized, `${data.name} • $${data.price}`);
+      } catch {
+        notify('error', `Could not load model: ${data.modelUrl}`);
+      }
 
-  // Firing & Recoil State
-  const audio = new SynthAudio();
-  const stats = { shots: 0, hits: 0, bullseyes: 0 };
-
-  let isFiring = false;
-  let isPointerLocked = false;
-  let burstIndex = 0;
-  let nextShotTime = 0;
-  let recoilYaw = 0;
-  let recoilPitch = 0;
-  let aimYaw = 0;
-  let aimPitch = 0;
-  let kickOffset = 0;
-  let dynamicSpreadPx = 0;
-  let muzzleFlashTimer = 0;
-  let lastPointer = { x: 0, y: 0 };
-
-  function updateMagCounter() {
-    const w = getWeaponData(state.arena.weaponId || 'ak47');
-    if (magCounterEl) {
-      magCounterEl.textContent = `${Math.max(0, w.magSize - burstIndex)} / ${w.magSize}`;
-    }
-  }
-
-  function resetWeaponBurst() {
-    burstIndex = 0;
-    recoilYaw = 0;
-    recoilPitch = 0;
-    updateMagCounter();
-  }
-
-  function updateHudStats() {
-    if (statShotsEl) statShotsEl.textContent = String(stats.shots);
-    if (statHitsEl) statHitsEl.textContent = String(stats.hits);
-    const pct = stats.shots > 0 ? Math.round((stats.hits / stats.shots) * 100) : 100;
-    if (statAccuracyEl) statAccuracyEl.textContent = `${pct}%`;
-    updateMagCounter();
-  }
-
-  function fireSingleShot(nowMs) {
-    const weaponId = state.arena.weaponId || 'ak47';
-    const w = getWeaponData(weaponId);
-
-    if (burstIndex >= w.magSize) {
-      isFiring = false;
-      return;
+      resetWeaponBurst();
+      rebuildGhostPattern();
+      updateHudStats();
     }
 
-    const step = w.pattern[Math.min(burstIndex, w.pattern.length - 1)] || { bulletDx: 0, bulletDy: 0, delayMs: w.fireIntervalMs };
+    attachGlbDropHandler(stageEl, async (file) => {
+      const normalized = await loadNormalizedWeaponFromFile(file);
+      mountWeaponObject(normalized, file.name);
+      notify('success', file.name);
+    });
 
-    if (burstIndex === 0) {
+    // Firing & Recoil State
+    const audio = new SynthAudio();
+    const stats = { shots: 0, hits: 0, bullseyes: 0 };
+    const shotRaycaster = new THREE.Raycaster();
+
+    let isFiring = false;
+    let isPointerLocked = false;
+    let burstIndex = 0;
+    let nextShotTime = 0;
+    let recoilYaw = 0;
+    let recoilPitch = 0;
+    let aimYaw = 0;
+    let aimPitch = 0;
+    let kickOffset = 0;
+    let dynamicSpreadPx = 0;
+    let muzzleFlashTimer = 0;
+    let lastPointer = { x: 0, y: 0 };
+
+    function updateMagCounter() {
+      const w = getWeaponData(state.arena.weaponId || 'ak47');
+      if (magCounterEl) {
+        magCounterEl.textContent = `${Math.max(0, w.magSize - burstIndex)} / ${w.magSize}`;
+      }
+    }
+
+    function resetWeaponBurst() {
+      burstIndex = 0;
       recoilYaw = 0;
       recoilPitch = 0;
-    } else {
-      recoilYaw += step.bulletDx * RECOIL_RAD_SCALE;
-      recoilPitch += step.bulletDy * RECOIL_RAD_SCALE;
+      updateMagCounter();
     }
 
-    const spreadRad = w.spreadBase * (1 + burstIndex * 0.04);
-    const randYaw = (Math.random() - 0.5) * spreadRad;
-    const randPitch = (Math.random() - 0.5) * spreadRad;
-
-    const effectiveYaw = (state.arena.mode === 'wall' ? 0 : aimYaw) + recoilYaw + randYaw;
-    const effectivePitch = (state.arena.mode === 'wall' ? 0 : aimPitch) + recoilPitch + randPitch;
-
-    const dist = Number(state.arena.distanceMeters || 20);
-    const impactX = Math.tan(effectiveYaw) * dist;
-    const impactY = EYE_HEIGHT + Math.tan(effectivePitch) * dist;
-
-    addBulletDecal(impactX, impactY);
-
-    const muzzleWorld = new THREE.Vector3();
-    muzzleFlash.getWorldPosition(muzzleWorld);
-    spawnTracer(muzzleWorld, new THREE.Vector3(impactX, impactY, -dist));
-
-    const radialDist = Math.hypot(impactX, impactY - EYE_HEIGHT);
-    stats.shots += 1;
-    if (radialDist <= 0.44) {
-      stats.hits += 1;
-      if (radialDist <= 0.17) stats.bullseyes += 1;
+    function updateHudStats() {
+      if (statShotsEl) statShotsEl.textContent = String(stats.shots);
+      if (statHitsEl) statHitsEl.textContent = String(stats.hits);
+      const pct = stats.shots > 0 ? Math.round((stats.hits / stats.shots) * 100) : 100;
+      if (statAccuracyEl) statAccuracyEl.textContent = `${pct}%`;
+      updateMagCounter();
     }
 
-    if (state.arena.mode === 'control') {
-      guideDotMesh.position.set(Math.tan(-recoilYaw) * dist, Math.tan(-recoilPitch) * dist, 0.015);
-    } else {
-      guideDotMesh.position.set(impactX, impactY - EYE_HEIGHT, 0.015);
+    function fireSingleShot(nowMs) {
+      const weaponId = state.arena.weaponId || 'ak47';
+      const w = getWeaponData(weaponId);
+
+      if (burstIndex >= w.magSize) {
+        isFiring = false;
+        return;
+      }
+
+      const step = w.pattern[Math.min(burstIndex, w.pattern.length - 1)] || { bulletDx: 0, bulletDy: 0, delayMs: w.fireIntervalMs };
+
+      if (burstIndex === 0) {
+        recoilYaw = 0;
+        recoilPitch = 0;
+      } else {
+        recoilYaw -= step.bulletDx * RECOIL_RAD_SCALE;
+        recoilPitch += step.bulletDy * RECOIL_RAD_SCALE;
+      }
+
+      const spreadRad = w.spreadBase * (1 + burstIndex * 0.04);
+      const randYaw = (Math.random() - 0.5) * spreadRad;
+      const randPitch = (Math.random() - 0.5) * spreadRad;
+
+      const effectiveYaw = (state.arena.mode === 'wall' ? 0 : aimYaw) + recoilYaw + randYaw;
+      const effectivePitch = (state.arena.mode === 'wall' ? 0 : aimPitch) + recoilPitch + randPitch;
+
+      const shootEuler = new THREE.Euler(effectivePitch, rangeLayout.yaw + effectiveYaw, 0, 'YXZ');
+      const shootDir = new THREE.Vector3(0, 0, -1).applyEuler(shootEuler).normalize();
+
+      shotRaycaster.set(camera.position, shootDir);
+      const rayTargets = mapMeshes.length ? [...mapMeshes] : [targetPlane];
+      const hits = shotRaycaster.intersectObjects(rayTargets, false);
+
+      const dist = rangeLayout.actualDistance || Number(state.arena.distanceMeters || 20);
+      let hitPoint = camera.position.clone().addScaledVector(shootDir, dist);
+      let hitNormal = rangeLayout.wallNormal.clone();
+
+      if (hits.length > 0) {
+        hitPoint = hits[0].point.clone();
+        if (hits[0].face) {
+          hitNormal
+            .copy(hits[0].face.normal)
+            .transformDirection(hits[0].object.matrixWorld)
+            .normalize();
+        }
+      }
+
+      addBulletDecalWorld(hitPoint, hitNormal);
+
+      const muzzleWorld = new THREE.Vector3();
+      muzzleFlash.getWorldPosition(muzzleWorld);
+      spawnTracer(muzzleWorld, hitPoint);
+
+      const localImpact = targetWallGroup.worldToLocal(hitPoint.clone());
+      const radialDist = Math.hypot(localImpact.x, localImpact.y);
+      stats.shots += 1;
+      if (radialDist <= 0.44) {
+        stats.hits += 1;
+        if (radialDist <= 0.17) stats.bullseyes += 1;
+      }
+
+      if (state.arena.mode === 'control') {
+        guideDotMesh.position.set(Math.tan(recoilYaw) * dist, Math.tan(-recoilPitch) * dist, 0.02);
+      } else {
+        guideDotMesh.position.set(localImpact.x, localImpact.y, 0.02);
+      }
+
+      kickOffset = Math.min(1.0, kickOffset + 0.55);
+      const limitScale = Math.max(0.2, Math.min(2.2, Number(state.crosshair.dynamicSpreadLimit ?? 227) / 140));
+      dynamicSpreadPx = Math.min(24 * limitScale, dynamicSpreadPx + 4.5);
+      muzzleFlashTimer = 0.045;
+      audio.playShot(weaponId);
+
+      burstIndex += 1;
+      nextShotTime = nowMs + (step.delayMs || w.fireIntervalMs || 100);
+      if (!w.auto) isFiring = false;
+      updateHudStats();
     }
 
-    kickOffset = Math.min(1.0, kickOffset + 0.55);
-    dynamicSpreadPx = Math.min(18, dynamicSpreadPx + 4.5);
-    muzzleFlashTimer = 0.045;
-    audio.playShot(weaponId);
-
-    burstIndex += 1;
-    nextShotTime = nowMs + (step.delayMs || w.fireIntervalMs || 100);
-    if (!w.auto) isFiring = false;
-    updateHudStats();
-  }
-
-  glCanvas.addEventListener('pointerdown', (e) => {
-    if (e.button !== 0) return;
-    audio.ensureCtx();
-    lastPointer = { x: e.clientX, y: e.clientY };
-
-    if (!isPointerLocked && state.arena.mode === 'control') {
-      aimYaw = 0;
-      aimPitch = 0;
-      camera.rotation.y = 0;
-      camera.rotation.x = 0;
-    }
-    if (burstIndex >= getWeaponData(state.arena.weaponId || 'ak47').magSize) {
-      resetWeaponBurst();
-    }
-    isFiring = true;
-    nextShotTime = performance.now();
-    stageEl.classList.add('is-aiming');
-  });
-
-  window.addEventListener('pointermove', (e) => {
-    if (!isFiring && !isPointerLocked) return;
-    if (state.arena.mode !== 'control') return;
-    const sens = Number(state.autoexecOpts.sensitivity ?? 1.85);
-    const radPerPx = 0.00055 * (sens / 1.85);
-    let dx = 0;
-    let dy = 0;
-    if (isPointerLocked) {
-      dx = e.movementX || 0;
-      dy = e.movementY || 0;
-    } else {
-      dx = e.clientX - lastPointer.x;
-      dy = e.clientY - lastPointer.y;
+    glCanvas.addEventListener('pointerdown', (e) => {
+      if (e.button !== 0) return;
+      audio.ensureCtx();
       lastPointer = { x: e.clientX, y: e.clientY };
+
+      if (!isPointerLocked && state.arena.mode === 'control') {
+        aimYaw = 0;
+        aimPitch = 0;
+        camera.rotation.y = rangeLayout.yaw;
+        camera.rotation.x = 0;
+      }
+      if (burstIndex >= getWeaponData(state.arena.weaponId || 'ak47').magSize) {
+        resetWeaponBurst();
+      }
+      isFiring = true;
+      nextShotTime = performance.now();
+      stageEl.classList.add('is-aiming');
+    });
+
+    window.addEventListener('pointermove', (e) => {
+      if (!isFiring && !isPointerLocked) return;
+      if (state.arena.mode !== 'control') return;
+      const sens = Number(state.autoexecOpts.sensitivity ?? 1.85);
+      const radPerPx = 0.00055 * (sens / 1.85);
+      let dx = 0;
+      let dy = 0;
+      if (isPointerLocked) {
+        dx = e.movementX || 0;
+        dy = e.movementY || 0;
+      } else {
+        dx = e.clientX - lastPointer.x;
+        dy = e.clientY - lastPointer.y;
+        lastPointer = { x: e.clientX, y: e.clientY };
+      }
+      aimYaw = THREE.MathUtils.clamp(aimYaw - dx * radPerPx, -0.35, 0.35);
+      aimPitch = THREE.MathUtils.clamp(aimPitch - dy * radPerPx, -0.32, 0.32);
+    });
+
+    window.addEventListener('pointerup', () => {
+      isFiring = false;
+      if (!isPointerLocked) stageEl.classList.remove('is-aiming');
+    });
+
+    document.addEventListener('pointerlockchange', () => {
+      isPointerLocked = document.pointerLockElement === glCanvas;
+      stageEl.classList.toggle('is-aiming', isPointerLocked);
+      if (pointerLockBtnEl) {
+        pointerLockBtnEl.classList.toggle('bg-[#ff9d00]/20', isPointerLocked);
+        pointerLockBtnEl.classList.toggle('border-[#ff9d00]', isPointerLocked);
+        pointerLockBtnEl.classList.toggle('text-[#ff9d00]', isPointerLocked);
+      }
+    });
+
+    pointerLockBtnEl?.addEventListener('click', () => {
+      if (isPointerLocked) document.exitPointerLock?.();
+      else glCanvas.requestPointerLock?.();
+    });
+
+    window.addEventListener('keydown', (e) => {
+      if (e.key.toLowerCase() === 'r' && document.activeElement?.tagName !== 'INPUT') {
+        resetWeaponBurst();
+        aimYaw = 0;
+        aimPitch = 0;
+      }
+    });
+
+    weaponSelectEl?.addEventListener('change', () => {
+      state.arena.weaponId = weaponSelectEl.value;
+      equipWeapon(state.arena.weaponId);
+      persist();
+    });
+
+    function syncArenaControls() {
+      rangeBtns.forEach((btn) => {
+        const active = Number(state.arena.distanceMeters) === Number(btn.dataset.arenaRange);
+        btn.classList.toggle('bg-[#ff9d00]/20', active);
+        btn.classList.toggle('border-[#ff9d00]', active);
+        btn.classList.toggle('text-[#ff9d00]', active);
+        btn.classList.toggle('border-slate-700', !active);
+        btn.classList.toggle('text-slate-400', !active);
+      });
+      modeBtns.forEach((btn) => {
+        const active = state.arena.mode === btn.dataset.arenaMode;
+        btn.classList.toggle('bg-[#ff9d00]/20', active);
+        btn.classList.toggle('border-[#ff9d00]', active);
+        btn.classList.toggle('text-[#ff9d00]', active);
+        btn.classList.toggle('border-slate-700', !active);
+        btn.classList.toggle('text-slate-400', !active);
+      });
+      if (ghostToggleEl) ghostToggleEl.checked = Boolean(state.arena.showGhostGuide);
     }
-    aimYaw = THREE.MathUtils.clamp(aimYaw - dx * radPerPx, -0.35, 0.35);
-    aimPitch = THREE.MathUtils.clamp(aimPitch - dy * radPerPx, -0.32, 0.32);
-  });
 
-  window.addEventListener('pointerup', () => {
-    isFiring = false;
-    if (!isPointerLocked) stageEl.classList.remove('is-aiming');
-  });
-
-  document.addEventListener('pointerlockchange', () => {
-    isPointerLocked = document.pointerLockElement === glCanvas;
-    stageEl.classList.toggle('is-aiming', isPointerLocked);
-    if (pointerLockBtnEl) {
-      pointerLockBtnEl.classList.toggle('bg-cyan-500/30', isPointerLocked);
-      pointerLockBtnEl.classList.toggle('border-cyan-400', isPointerLocked);
-    }
-  });
-
-  pointerLockBtnEl?.addEventListener('click', () => {
-    if (isPointerLocked) document.exitPointerLock?.();
-    else glCanvas.requestPointerLock?.();
-  });
-
-  window.addEventListener('keydown', (e) => {
-    if (e.key.toLowerCase() === 'r' && document.activeElement?.tagName !== 'INPUT') {
-      resetWeaponBurst();
-      aimYaw = 0;
-      aimPitch = 0;
-    }
-  });
-
-  weaponSelectEl?.addEventListener('change', () => {
-    state.arena.weaponId = weaponSelectEl.value;
-    equipWeapon(state.arena.weaponId);
-    persist();
-  });
-
-  function syncArenaControls() {
     rangeBtns.forEach((btn) => {
-      const active = Number(state.arena.distanceMeters) === Number(btn.dataset.arenaRange);
-      btn.classList.toggle('bg-cyan-500/20', active);
-      btn.classList.toggle('border-cyan-400', active);
-      btn.classList.toggle('text-cyan-200', active);
-      btn.classList.toggle('border-slate-700', !active);
-      btn.classList.toggle('text-slate-400', !active);
+      btn.addEventListener('click', () => {
+        state.arena.distanceMeters = Number(btn.dataset.arenaRange);
+        clearDecals();
+        applyRangePosition();
+        syncArenaControls();
+        persist();
+      });
     });
+
     modeBtns.forEach((btn) => {
-      const active = state.arena.mode === btn.dataset.arenaMode;
-      btn.classList.toggle('bg-amber-500/20', active);
-      btn.classList.toggle('border-amber-400', active);
-      btn.classList.toggle('text-amber-200', active);
-      btn.classList.toggle('border-slate-700', !active);
-      btn.classList.toggle('text-slate-400', !active);
+      btn.addEventListener('click', () => {
+        state.arena.mode = btn.dataset.arenaMode;
+        aimYaw = 0;
+        aimPitch = 0;
+        resetWeaponBurst();
+        clearDecals();
+        rebuildGhostPattern();
+        syncArenaControls();
+        persist();
+      });
     });
-    if (ghostToggleEl) ghostToggleEl.checked = Boolean(state.arena.showGhostGuide);
-  }
 
-  rangeBtns.forEach((btn) => {
-    btn.addEventListener('click', () => {
-      state.arena.distanceMeters = Number(btn.dataset.arenaRange);
-      targetWallGroup.position.z = -state.arena.distanceMeters;
-      clearDecals();
-      rebuildGhostPattern();
-      syncArenaControls();
+    ghostToggleEl?.addEventListener('change', () => {
+      state.arena.showGhostGuide = ghostToggleEl.checked;
+      ghostGroup.visible = ghostToggleEl.checked;
       persist();
     });
-  });
 
-  modeBtns.forEach((btn) => {
-    btn.addEventListener('click', () => {
-      state.arena.mode = btn.dataset.arenaMode;
-      aimYaw = 0;
-      aimPitch = 0;
+    soundToggleEl?.addEventListener('click', () => {
+      audio.muted = !audio.muted;
+      soundToggleEl.classList.toggle('text-slate-500', audio.muted);
+      soundToggleEl.classList.toggle('text-[#ff9d00]', !audio.muted);
+    });
+
+    clearBtnEl?.addEventListener('click', () => {
+      clearDecals();
       resetWeaponBurst();
-      clearDecals();
-      rebuildGhostPattern();
-      syncArenaControls();
-      persist();
     });
-  });
 
-  ghostToggleEl?.addEventListener('change', () => {
-    state.arena.showGhostGuide = ghostToggleEl.checked;
-    ghostGroup.visible = ghostToggleEl.checked;
-    persist();
-  });
+    resetStatsBtnEl?.addEventListener('click', () => {
+      stats.shots = 0;
+      stats.hits = 0;
+      stats.bullseyes = 0;
+      clearDecals();
+      resetWeaponBurst();
+      updateHudStats();
+    });
 
-  soundToggleEl?.addEventListener('click', () => {
-    audio.muted = !audio.muted;
-    soundToggleEl.classList.toggle('text-slate-500', audio.muted);
-    soundToggleEl.classList.toggle('text-cyan-300', !audio.muted);
-  });
+    const hudCtx = hudCanvas.getContext('2d');
+    let stageWidth = 800;
+    let stageHeight = 450;
 
-  clearBtnEl?.addEventListener('click', () => {
-    clearDecals();
-    resetWeaponBurst();
-  });
+    function handleResize() {
+      const rect = stageEl.getBoundingClientRect();
+      if (!rect.width || !rect.height) return;
+      stageWidth = rect.width;
+      stageHeight = rect.height;
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      renderer.setSize(stageWidth, stageHeight, false);
+      camera.aspect = stageWidth / stageHeight;
+      camera.updateProjectionMatrix();
+      hudCanvas.width = Math.round(stageWidth * dpr);
+      hudCanvas.height = Math.round(stageHeight * dpr);
+      hudCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
 
-  resetStatsBtnEl?.addEventListener('click', () => {
-    stats.shots = 0;
-    stats.hits = 0;
-    stats.bullseyes = 0;
-    clearDecals();
-    resetWeaponBurst();
-    updateHudStats();
-  });
+    new ResizeObserver(handleResize).observe(stageEl);
+    handleResize();
 
-  const hudCtx = hudCanvas.getContext('2d');
-  let stageWidth = 800;
-  let stageHeight = 450;
+    // Crosshair Studio Controls + Pro Database wiring
+    const proGridEl = document.getElementById('pro-crosshair-grid');
+    const shareInputEl = document.getElementById('crosshair-share-code');
+    const importBtnEl = document.getElementById('btn-import-crosshair');
+    const copyBtnEl = document.getElementById('btn-copy-crosshair');
 
-  function handleResize() {
-    const rect = stageEl.getBoundingClientRect();
-    if (!rect.width || !rect.height) return;
-    stageWidth = rect.width;
-    stageHeight = rect.height;
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    renderer.setSize(stageWidth, stageHeight, false);
-    camera.aspect = stageWidth / stageHeight;
-    camera.updateProjectionMatrix();
-    hudCanvas.width = Math.round(stageWidth * dpr);
-    hudCanvas.height = Math.round(stageHeight * dpr);
-    hudCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  }
+    const styleEl = document.getElementById('ch-style');
+    const lengthEl = document.getElementById('ch-length');
+    const thicknessEl = document.getElementById('ch-thickness');
+    const gapEl = document.getElementById('ch-gap');
+    const alphaEl = document.getElementById('ch-alpha');
+    const outlineEl = document.getElementById('ch-outline');
+    const outlineThicknessEl = document.getElementById('ch-outline-thickness');
+    const dotEl = document.getElementById('ch-dot');
+    const tStyleEl = document.getElementById('ch-tstyle');
+    const followRecoilEl = document.getElementById('ch-follow-recoil');
+    const sniperEl = document.getElementById('ch-sniper-width');
+    const colorPickerEl = document.getElementById('ch-color-picker');
+    const colorSwatchesEl = document.getElementById('ch-color-swatches');
 
-  new ResizeObserver(handleResize).observe(stageEl);
-  handleResize();
+    const valEls = {
+      length: document.getElementById('val-ch-length'),
+      thickness: document.getElementById('val-ch-thickness'),
+      gap: document.getElementById('val-ch-gap'),
+      alpha: document.getElementById('val-ch-alpha'),
+      outlineThickness: document.getElementById('val-ch-outline-thickness'),
+      sniperWidth: document.getElementById('val-ch-sniper'),
+    };
 
-  // Crosshair Studio Controls + Pro Database wiring
-  const proGridEl = document.getElementById('pro-crosshair-grid');
-  const shareInputEl = document.getElementById('crosshair-share-code');
-  const importBtnEl = document.getElementById('btn-import-crosshair');
-  const copyBtnEl = document.getElementById('btn-copy-crosshair');
-
-  const styleEl = document.getElementById('ch-style');
-  const lengthEl = document.getElementById('ch-length');
-  const thicknessEl = document.getElementById('ch-thickness');
-  const gapEl = document.getElementById('ch-gap');
-  const alphaEl = document.getElementById('ch-alpha');
-  const outlineEl = document.getElementById('ch-outline');
-  const dotEl = document.getElementById('ch-dot');
-  const tStyleEl = document.getElementById('ch-tstyle');
-  const followRecoilEl = document.getElementById('ch-follow-recoil');
-  const sniperEl = document.getElementById('ch-sniper-width');
-  const colorPickerEl = document.getElementById('ch-color-picker');
-  const colorSwatchesEl = document.getElementById('ch-color-swatches');
-
-  const valEls = {
-    length: document.getElementById('val-ch-length'),
-    thickness: document.getElementById('val-ch-thickness'),
-    gap: document.getElementById('val-ch-gap'),
-    alpha: document.getElementById('val-ch-alpha'),
-    sniperWidth: document.getElementById('val-ch-sniper'),
-  };
-
-  function renderSwatches() {
-    if (!colorSwatchesEl) return;
-    colorSwatchesEl.innerHTML = CROSSHAIR_COLOR_PRESETS.map((preset) => {
-      const active =
-        Math.abs(state.crosshair.red - preset.r) < 8 &&
-        Math.abs(state.crosshair.green - preset.g) < 8 &&
-        Math.abs(state.crosshair.blue - preset.b) < 8;
-      return `<button type="button" data-color-preset="${preset.id}" title="${preset.label}"
-        class="w-7 h-7 rounded-lg border transition-transform hover:scale-110 cursor-pointer ${active ? 'border-white ring-2 ring-cyan-400/70 scale-105' : 'border-slate-600'}"
+    function renderSwatches() {
+      if (!colorSwatchesEl) return;
+      colorSwatchesEl.innerHTML = CROSSHAIR_COLOR_PRESETS.map((preset) => {
+        const active =
+          Math.abs(state.crosshair.red - preset.r) < 8 &&
+          Math.abs(state.crosshair.green - preset.g) < 8 &&
+          Math.abs(state.crosshair.blue - preset.b) < 8;
+        return `<button type="button" data-color-preset="${preset.id}" title="${preset.label}"
+        class="w-7 h-7 rounded-sm border transition-transform hover:scale-110 cursor-pointer ${active ? 'border-white ring-2 ring-[#ff9d00]/80 scale-105' : 'border-slate-700'}"
         style="background-color: rgb(${preset.r}, ${preset.g}, ${preset.b})"></button>`;
-    }).join('');
-  }
+      }).join('');
+    }
 
-  function renderProGrid() {
-    if (!proGridEl) return;
-    proGridEl.innerHTML = PRO_CROSSHAIRS.map((pro) => {
-      const isSelected = state.crosshair.activeProId === pro.id;
-      return `<button type="button" data-pro-id="${pro.id}"
-        class="pro-card group flex items-center gap-3 p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+    function renderProGrid() {
+      if (!proGridEl) return;
+      proGridEl.innerHTML = PRO_CROSSHAIRS.map((pro) => {
+        const isSelected = state.crosshair.activeProId === pro.id;
+        return `<button type="button" data-pro-id="${pro.id}"
           isSelected
-            ? 'bg-cyan-500/15 border-cyan-400/80 shadow-[0_0_20px_rgba(34,211,238,0.18)]'
-            : 'bg-slate-900/70 border-slate-700/60 hover:border-cyan-400/50 hover:bg-slate-800/80'
-        }">
-        ${buildCrosshairMiniSvg(pro.settings)}
-        <div class="min-w-0 flex-1">
-          <div class="flex items-center justify-between gap-1">
-            <span class="font-bold text-sm text-white truncate">${pro.player}</span>
-            <span class="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-cyan-300 border border-slate-700 shrink-0">${pro.tag}</span>
-          </div>
-          <div class="text-xs text-slate-400 truncate">${pro.team} • ${pro.role}</div>
-          <div class="text-[10px] text-slate-500 font-mono truncate mt-0.5">${pro.resolution}</div>
-        </div>
-      </button>`;
+            ? 'bg-[#ff9d00]/12 border-[#ff9d00] shadow-[0_0_20px_rgba(255,157,0,0.16)]'
+            : 'bg-slate-900/80 border-slate-800 hover:border-[#ff9d00]/60 hover:bg-slate-900'
+      }">
+        ${ buildCrosshairMiniSvg(pro.settings)
+    }
+    <div class="min-w-0 flex-1">
+      <div class="flex items-center justify-between gap-1">
+        <span class="font-bold text-sm text-white truncate">${pro.player}</span>
+        <span class="text-[10px] px-1.5 py-0.5 rounded-sm bg-slate-800 text-[#ff9d00] border border-slate-700 shrink-0">${pro.tag}</span>
+      </div>
+      <div class="text-xs text-slate-400 truncate">${pro.team} • ${pro.role}</div>
+      <div class="text-[10px] text-slate-500 font-mono truncate mt-0.5">${pro.resolution}</div>
+    </div>
+      </button > `;
     }).join('');
   }
 
@@ -879,6 +778,7 @@ export function mountSprayArenaPage() {
     if (gapEl) gapEl.value = String(ch.gap);
     if (alphaEl) alphaEl.value = String(ch.alpha);
     if (outlineEl) outlineEl.value = String(ch.outlineMode);
+    if (outlineThicknessEl) outlineThicknessEl.value = String(ch.outlineThickness ?? 1);
     if (dotEl) dotEl.checked = Boolean(ch.centerDotEnabled);
     if (tStyleEl) tStyleEl.checked = Boolean(ch.tStyleEnabled);
     if (followRecoilEl) followRecoilEl.checked = Boolean(ch.followRecoil);
@@ -889,6 +789,7 @@ export function mountSprayArenaPage() {
     if (valEls.thickness) valEls.thickness.textContent = String(ch.thickness);
     if (valEls.gap) valEls.gap.textContent = String(ch.gap);
     if (valEls.alpha) valEls.alpha.textContent = String(ch.alpha);
+    if (valEls.outlineThickness) valEls.outlineThickness.textContent = Number(ch.outlineThickness ?? 1).toFixed(1);
     if (valEls.sniperWidth) valEls.sniperWidth.textContent = String(ch.sniperWidth ?? 1);
     if (shareInputEl) shareInputEl.value = encodeCrosshairCode(ch);
     renderSwatches();
@@ -907,6 +808,7 @@ export function mountSprayArenaPage() {
   gapEl?.addEventListener('input', () => updateCrosshair({ gap: Number(gapEl.value), activeProId: null }));
   alphaEl?.addEventListener('input', () => updateCrosshair({ alpha: Number(alphaEl.value), activeProId: null }));
   outlineEl?.addEventListener('change', () => updateCrosshair({ outlineMode: Number(outlineEl.value), activeProId: null }));
+  outlineThicknessEl?.addEventListener('input', () => updateCrosshair({ outlineThickness: Number(outlineThicknessEl.value), activeProId: null }));
   dotEl?.addEventListener('change', () => updateCrosshair({ centerDotEnabled: dotEl.checked, activeProId: null }));
   tStyleEl?.addEventListener('change', () => updateCrosshair({ tStyleEnabled: tStyleEl.checked, activeProId: null }));
   followRecoilEl?.addEventListener('change', () => updateCrosshair({ followRecoil: followRecoilEl.checked, activeProId: null }));
@@ -976,7 +878,7 @@ export function mountSprayArenaPage() {
     dynamicSpreadPx *= Math.exp(-10 * dt);
 
     const camPunchScale = state.arena.mode === 'wall' ? 0.12 : 0.35;
-    camera.rotation.y = aimYaw + recoilYaw * camPunchScale;
+    camera.rotation.y = rangeLayout.yaw + aimYaw + recoilYaw * camPunchScale;
     camera.rotation.x = aimPitch + recoilPitch * camPunchScale;
 
     kickOffset *= Math.exp(-12 * dt);

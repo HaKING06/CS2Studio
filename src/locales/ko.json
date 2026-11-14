@@ -5,14 +5,15 @@
   },
   "nav": {
     "brand": "CS2 STUDIO",
-    "version": "v0.0.1",
+    "version": "v0.0.3",
     "arena": "3D 스프레이 아레나",
     "buyBinds": "구매 바인드",
     "viewmodel": "뷰모델",
     "autoexec": "Autoexec 내보내기",
     "supportBmc": "커피 한 잔 후원",
     "language": "언어",
-    "home": "대시보드"
+    "home": "대시보드",
+    "crosshair": "조준선"
   },
   "hero": {
     "badge": "100% 클라이언트 실행 • 로그인 불필요 • 즉시 Autoexec 생성",
@@ -58,7 +59,17 @@
     "followRecoil": "반동 따라가기",
     "sniperWidth": "스나이퍼 조준선 두께",
     "dropGlbHint": "커스텀 CS2 .glb 무기 파일을 3D 화면으로 드래그해 미리보기",
-    "modelStatus": "Source 2 HD 무기 모델"
+    "modelStatus": "Source 2 HD 무기 모델",
+    "splitDistance": "분리 거리",
+    "innerSplitAlpha": "내부 투명도",
+    "outerSplitAlpha": "외부 투명도",
+    "splitSizeRatio": "분리 비율",
+    "dynamicSpreadLimit": "탄퍼짐 한계",
+    "testSpread": "사격 / 이동 테스트",
+    "copyConVars": "ConVars 복사",
+    "conVarsCopied": "조준선 콘솔 명령어가 복사되었습니다!",
+    "liveConVars": "실시간 CS2 ConVars",
+    "openArena3D": "3D Dust2에서 테스트"
   },
   "buyBinds": {
     "title": "비주얼 구매 바인드 스튜디오",
@@ -144,6 +155,8 @@
     "buyBindsTitle": "CS2 비주얼 구매 바인드 생성기 — CS2 Studio",
     "buyBindsDesc": "기계식 키보드에 무기와 수류탄을 드래그해 즉시 CS2 구매 바인드를 생성하세요.",
     "autoexecTitle": "CS2 Autoexec.cfg 생성 및 내보내기 — CS2 Studio",
-    "autoexecDesc": "크로스헤어, 뷰모델, 구매 바인드, FPS 최적화를 하나의 깔끔한 autoexec.cfg로 다운로드하세요."
+    "autoexecDesc": "크로스헤어, 뷰모델, 구매 바인드, FPS 최적화를 하나의 깔끔한 autoexec.cfg로 다운로드하세요.",
+    "crosshairTitle": "CS2 조준선 생성기, 반동 추적 & 공유 코드 — CS2 Studio",
+    "crosshairDesc": "CS2 cl_crosshair_recoil, 동적 탄퍼짐, 외곽선 두께, 스나이퍼 조준선 및 공유 코드를 실시간 설정하세요."
   }
 }

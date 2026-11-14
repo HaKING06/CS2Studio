@@ -16,10 +16,10 @@ export const DEFAULT_CROSSHAIR = {
   alpha: 255,
   sniperWidth: 1,
   screenHeight: 960,
-  splitDistance: 3,
-  innerSplitAlpha: 0,
-  outerSplitAlpha: 1,
-  splitSizeRatio: 1,
+  splitDistance: 6,
+  innerSplitAlpha: 1,
+  outerSplitAlpha: 0.5,
+  splitSizeRatio: 0.3,
   dynamicSpreadLimit: 227,
   activeProId: 'donk',
 };
@@ -71,7 +71,7 @@ export const DEFAULT_ARENA_SETTINGS = {
 
 export function getDefaultState() {
   return {
-    version: '0.0.1',
+    version: '0.0.3',
     crosshair: { ...DEFAULT_CROSSHAIR },
     viewmodel: { ...DEFAULT_VIEWMODEL },
     buyBinds: structuredClone(DEFAULT_BUY_BINDS),
@@ -88,7 +88,7 @@ export function loadState() {
     if (!raw) return defaults;
     const parsed = JSON.parse(raw);
     return {
-      version: '0.0.1',
+      version: '0.0.3',
       crosshair: { ...defaults.crosshair, ...(parsed.crosshair || {}) },
       viewmodel: { ...defaults.viewmodel, ...(parsed.viewmodel || {}) },
       buyBinds: parsed.buyBinds && typeof parsed.buyBinds === 'object' ? parsed.buyBinds : defaults.buyBinds,
