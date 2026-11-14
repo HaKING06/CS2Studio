@@ -1,7 +1,7 @@
 {
   "name": "cs2-studio",
-  "version": "0.0.4",
-  "description": "CS2 Studio v0.0.4 - 100% client-side Static MPA suite for CS2 3D Dust2 Crosshair & Spray Arena, 670+ Pro Esports Crosshairs (2012-2026), Real 1080p CS2 Map Previews, Live Viewmodel Simulator, Visual Buy Binds & Autoexec Generator.",
+  "version": "0.1.0",
+  "description": "CS2 Studio v0.1.0 (Stable Beta) - 100% client-side Static MPA suite for CS2 3D Dust2 Crosshair & Spray Arena, 674 Pro Esports Crosshairs (2012-2026), Real 1080p CS2 Map Previews, Visual Mechanical Buy Binds, Live Viewmodel Simulator & Autoexec Generator.",
   "type": "module",
   "private": true,
   "scripts": {

@@ -94,7 +94,7 @@ const t = (key: string) => translateKey(dict, key);
 
       <div class="flex flex-wrap items-center justify-between gap-2 pt-1">
         <div class="flex flex-wrap items-center gap-2">
-          <span class="text-[11px] font-mono font-bold text-slate-400 uppercase mr-1">{t('viewmodel.presetPos')}</span>
+          <span data-tooltip="viewmodel_presetpos 1 (Desktop), 2 (Couch), 3 (Classic) • 0 unlocks custom offsets" class="text-[11px] font-mono font-bold text-slate-400 uppercase mr-1">{t('viewmodel.presetPos')}</span>
           <button type="button" data-vm-preset="1" class="px-3 py-1.5 rounded-sm border text-xs font-semibold cursor-pointer transition-colors">{t('viewmodel.presetDesktop')}</button>
           <button type="button" data-vm-preset="2" class="px-3 py-1.5 rounded-sm border text-xs font-semibold cursor-pointer transition-colors">{t('viewmodel.presetCouch')}</button>
           <button type="button" data-vm-preset="3" class="px-3 py-1.5 rounded-sm border text-xs font-semibold cursor-pointer transition-colors">{t('viewmodel.presetClassic')}</button>

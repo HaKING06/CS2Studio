@@ -1,12 +1,12 @@
 <div align="center">
 
-![CS2 Studio v0.0.4 Promotional Banner](./public/assets/promo-banner.png)
+![CS2 Studio v0.1.0 Promotional Banner](./public/assets/promo-banner.png)
 
-# CS2 STUDIO `v0.0.4`
+# CS2 STUDIO `v0.1.0` (Stable Beta)
 
-**The 100% Client-Side Counter-Strike 2 Configuration Suite — 3D Dust2 Spray Arena, Real 1080p CS2 Map Backdrops, 670+ Pro Esports Crosshair Database (2012–2026), Live Viewmodel Simulator, Visual Buy Binds & Autoexec Exporter.**
+**The 100% Client-Side Counter-Strike 2 Configuration Suite — 3D Dust2 Spray Arena, Real 1080p CS2 Map Backdrops, 670+ Pro Esports Crosshair Database (2012–2026), Live Viewmodel Simulator, Visual Mechanical Buy Binds & Autoexec Exporter.**
 
-[![Version](https://img.shields.io/badge/Version-0.0.4-ff9d00?style=for-the-badge&logo=counter-strike&logoColor=white)](https://cs2studio.haking.tr)
+[![Version](https://img.shields.io/badge/Version-0.1.0%20Beta-ff9d00?style=for-the-badge&logo=counter-strike&logoColor=white)](https://cs2studio.haking.tr)
 [![License: MIT](https://img.shields.io/badge/License-MIT-22c55e?style=for-the-badge)](./LICENSE)
 [![Build](https://img.shields.io/badge/Astro-Static%20MPA-0ea5e9?style=for-the-badge&logo=astro&logoColor=white)](https://astro.build)
 [![Cloudflare Pages](https://img.shields.io/badge/Deploy-Cloudflare%20Pages-f38020?style=for-the-badge&logo=cloudflarepages&logoColor=white)](https://pages.cloudflare.com)
@@ -18,7 +18,7 @@
 
 ---
 
-## Core Modules & v0.0.4 Upgrades
+## Core Modules & v0.1.0 Release Highlights
 
 CS2 Studio runs entirely on static edge HTML + client-side browser storage (`localStorage`) with **zero database or login walls**:
 

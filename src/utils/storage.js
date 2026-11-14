@@ -71,7 +71,7 @@ export const DEFAULT_ARENA_SETTINGS = {
 
 export function getDefaultState() {
   return {
-    version: '0.0.4',
+    version: '0.1.0',
     crosshair: { ...DEFAULT_CROSSHAIR },
     viewmodel: { ...DEFAULT_VIEWMODEL },
     buyBinds: structuredClone(DEFAULT_BUY_BINDS),
@@ -88,7 +88,7 @@ export function loadState() {
     if (!raw) return defaults;
     const parsed = JSON.parse(raw);
     return {
-      version: '0.0.4',
+      version: '0.1.0',
       crosshair: { ...defaults.crosshair, ...(parsed.crosshair || {}) },
       viewmodel: { ...defaults.viewmodel, ...(parsed.viewmodel || {}) },
       buyBinds: parsed.buyBinds && typeof parsed.buyBinds === 'object' ? parsed.buyBinds : defaults.buyBinds,

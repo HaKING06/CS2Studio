@@ -1,5 +1,5 @@
 ---
-import { SUPPORTED_LANGUAGES, getLocalizedPath } from '../utils/i18n.js';
+import { SUPPORTED_LANGUAGES, LANG_STORAGE_KEY, getLocalizedPath } from '../utils/i18n.js';
 
 interface Props {
   lang: string;
@@ -15,10 +15,11 @@ const { lang, pageKey } = Astro.props;
     id="lang-switcher"
     aria-label="Language Selector"
     data-current-lang={lang}
+    data-storage-key={LANG_STORAGE_KEY}
     class="bg-[#0b0f17] hover:bg-slate-900 border border-slate-700/80 hover:border-[#ff9d00]/70 text-slate-200 text-xs font-medium rounded-sm px-2.5 py-1.5 pr-7 focus:outline-none focus:border-[#ff9d00] cursor-pointer transition-colors"
   >
     {SUPPORTED_LANGUAGES.map((l) => (
-      <option value={getLocalizedPath(l.code, pageKey, true)} selected={l.code === lang}>
+      <option value={getLocalizedPath(l.code, pageKey, true)} data-lang={l.code} selected={l.code === lang}>
         {l.flag} {l.nativeName} ({l.code.toUpperCase()})
       </option>
     ))}
@@ -27,11 +28,34 @@ const { lang, pageKey } = Astro.props;
 
 <script is:inline>
   (function () {
-    const sel = document.getElementById('lang-switcher');
+    var sel = document.getElementById('lang-switcher');
     if (!sel) return;
+    var key = sel.getAttribute('data-storage-key') || 'cs2_lang';
+    var activeLang = sel.getAttribute('data-current-lang') || 'en';
+
+    function syncSelectedOption() {
+      var opts = sel.options;
+      for (var i = 0; i < opts.length; i++) {
+        if (opts[i].getAttribute('data-lang') === activeLang) {
+          sel.selectedIndex = i;
+          break;
+        }
+      }
+    }
+
+    syncSelectedOption();
+    window.addEventListener('pageshow', syncSelectedOption);
+
     sel.addEventListener('change', function () {
+      var opt = sel.options[sel.selectedIndex];
+      var selectedLang = (opt && opt.getAttribute('data-lang')) || 'en';
+      try {
+        localStorage.setItem(key, selectedLang);
+      } catch (e) {
+        // Ignore private browsing storage restriction
+      }
       if (sel.value && window.location.pathname !== sel.value) {
-        window.location.href = sel.value;
+        window.location.assign(sel.value + window.location.search + window.location.hash);
       }
     });
   })();

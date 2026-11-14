@@ -68,11 +68,11 @@ const t = (key: string) => translateKey(dict, key);
       </div>
 
       <div class="space-y-2 pt-2">
-        <label class="flex items-center justify-between p-2.5 rounded-sm bg-[#0b0f17] border border-slate-800 text-xs text-slate-200 cursor-pointer">
+        <label data-tooltip="engine_low_latency_sleep_after_client_tick 1 & client impact prediction tweaks for snappier subtick input" class="flex items-center justify-between p-2.5 rounded-sm bg-[#0b0f17] border border-slate-800 text-xs text-slate-200 cursor-pointer">
           <span>{t('autoexec.optLowLatency')}</span>
           <input id="opt-low-latency" type="checkbox" class="accent-[#ff9d00] cursor-pointer" />
         </label>
-        <label class="flex items-center justify-between p-2.5 rounded-sm bg-[#0b0f17] border border-slate-800 text-xs text-slate-200 cursor-pointer">
+        <label data-tooltip="cl_hud_telemetry_* ConVars display real-time ping, frame time & jitter warnings" class="flex items-center justify-between p-2.5 rounded-sm bg-[#0b0f17] border border-slate-800 text-xs text-slate-200 cursor-pointer">
           <span>{t('autoexec.optHudTelemetry')}</span>
           <input id="opt-hud-telemetry" type="checkbox" class="accent-[#ff9d00] cursor-pointer" />
         </label>

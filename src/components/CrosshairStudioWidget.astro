@@ -246,7 +246,7 @@ const t = (key: string) => translateKey(dict, key);
           <span>{t('arena.tStyle')}</span>
           <input id="ch-tstyle" type="checkbox" class="accent-[#ff9d00] cursor-pointer" />
         </label>
-        <label class="flex items-center justify-between p-2.5 rounded-sm bg-[#0b0f17] border border-[#ff9d00]/40 text-xs text-[#ff9d00] font-bold cursor-pointer">
+        <label data-tooltip="Follow Recoil: shifts your crosshair in real time along active weapon spray recoil" class="flex items-center justify-between p-2.5 rounded-sm bg-[#0b0f17] border border-[#ff9d00]/40 text-xs text-[#ff9d00] font-bold cursor-pointer">
           <span>{t('arena.followRecoil')} (cl_crosshair_recoil)</span>
           <input id="ch-follow-recoil" type="checkbox" class="accent-[#ff9d00] cursor-pointer" />
         </label>

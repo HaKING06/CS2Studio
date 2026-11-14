@@ -3,6 +3,9 @@ import '../styles/global.css';
 import LanguageSwitcher from '../components/LanguageSwitcher.astro';
 import {
   SUPPORTED_LANGUAGES,
+  LANGUAGE_CODES,
+  LANG_STORAGE_KEY,
+  PAGE_SLUGS,
   getDictionary,
   getLangInfo,
   getLocalizedPath,
@@ -77,7 +80,7 @@ const jsonLd = {
   name: 'CS2 Studio',
   applicationCategory: 'GameApplication',
   operatingSystem: 'Web Browser',
-  softwareVersion: '0.0.4',
+  softwareVersion: '0.1.0',
   url: canonicalUrl,
   inLanguage: lang,
   description: pageDescription,
@@ -143,8 +146,35 @@ const jsonLd = {
     <meta name="twitter:image" content={`${siteOrigin}/assets/og-banner.png`} />
 
     <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
-    <script is:inline define:vars={{ clientDict }}>
+    <script is:inline define:vars={{ clientDict, pageLang: lang, isPrefixed, pageSlug: PAGE_SLUGS[pageKey] ?? '', supportedCodes: LANGUAGE_CODES, langStorageKey: LANG_STORAGE_KEY }}>
       window.__CS2_I18N__ = clientDict;
+      (function () {
+        try {
+          var isSupported = function (code) {
+            return Boolean(code && supportedCodes.indexOf(code) !== -1);
+          };
+          var saved = localStorage.getItem(langStorageKey);
+          if (!isSupported(saved)) {
+            if (isPrefixed) {
+              localStorage.setItem(langStorageKey, pageLang);
+              saved = pageLang;
+            } else {
+              var rawNav = (navigator.languages && navigator.languages[0]) || navigator.language || 'en';
+              var detected = String(rawNav).toLowerCase().split(/[-_]/)[0];
+              saved = isSupported(detected) ? detected : 'en';
+              localStorage.setItem(langStorageKey, saved);
+            }
+          }
+          if (!isPrefixed && saved && saved !== pageLang) {
+            var targetPath = '/' + saved + (pageSlug ? '/' + pageSlug : '');
+            if (window.location.pathname !== targetPath) {
+              window.location.replace(targetPath + window.location.search + window.location.hash);
+            }
+          }
+        } catch (e) {
+          // Ignore storage restriction errors
+        }
+      })();
     </script>
   </head>
 
@@ -239,7 +269,7 @@ const jsonLd = {
         <div class="flex items-center gap-3">
           <img src="/assets/logo.png" alt="CS2 Studio" width="32" height="32" class="w-8 h-8 object-contain" />
           <div>
-            <div class="font-display text-lg uppercase tracking-wider font-bold text-white leading-none">CS2 Studio v0.0.3</div>
+            <div class="font-display text-lg uppercase tracking-wider font-bold text-white leading-none">CS2 Studio v0.1.0</div>
             <p class="text-xs text-slate-400 mt-0.5">{t('footer.madeFor')}</p>
           </div>
         </div>
@@ -267,6 +297,7 @@ const jsonLd = {
           {SUPPORTED_LANGUAGES.map((l) => (
             <a
               href={getLocalizedPath(l.code, pageKey, true)}
+              data-lang-link={l.code}
               class={`hover:text-[#ff9d00] transition-colors ${l.code === lang ? 'text-[#ff9d00] font-semibold' : ''}`}
             >
               {l.flag} {l.nativeName}
@@ -275,5 +306,17 @@ const jsonLd = {
         </div>
       </div>
     </footer>
+    <script is:inline define:vars={{ langStorageKey: LANG_STORAGE_KEY }}>
+      document.addEventListener('click', function (e) {
+        var link = e.target && e.target.closest ? e.target.closest('[data-lang-link]') : null;
+        if (!link) return;
+        var code = link.getAttribute('data-lang-link');
+        if (code) {
+          try {
+            localStorage.setItem(langStorageKey, code);
+          } catch (err) {}
+        }
+      });
+    </script>
   </body>
 </html>

@@ -22,6 +22,7 @@ export const SUPPORTED_LANGUAGES = [
 ];
 
 export const LANGUAGE_CODES = SUPPORTED_LANGUAGES.map((l) => l.code);
+export const LANG_STORAGE_KEY = 'cs2_lang';
 
 export const PAGE_SLUGS = {
   home: '',
